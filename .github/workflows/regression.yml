@@ -1,0 +1,114 @@
+name: regression
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: regression-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  # 接口与存储回归：真 MySQL + 真 HTTP，不用 mock
+  regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root-ci
+          MYSQL_DATABASE: docvault
+          MYSQL_USER: docvault
+          MYSQL_PASSWORD: docvault-ci
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -udocvault -pdocvault-ci --silent"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=24
+
+    env:
+      DOCVault_DB_HOST: 127.0.0.1
+      DOCVault_DB_PORT: "3306"
+      DOCVault_DB_USER: docvault
+      DOCVault_DB_PASS: docvault-ci
+      DOCVault_DB_NAME: docvault
+      DOCVault_JWT_SECRET: ci-only-secret-never-use-in-production
+      DOCVAULT_DATA_DIR: ${{ github.workspace }}/data
+      DOCVAULT_CACHE_GB: "1"
+      BASE_URL: http://127.0.0.1:10001
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: 安装依赖
+        run: pip install -r requirements.txt
+
+      - name: 语法检查
+        run: python -m compileall -q app scripts
+
+      - name: 启动服务
+        run: |
+          mkdir -p "$DOCVAULT_DATA_DIR"
+          nohup python -m uvicorn app.main:app --host 127.0.0.1 --port 10001 > app.log 2>&1 &
+          for i in $(seq 1 60); do
+            if curl -fsS "$BASE_URL/api/health" 2>/dev/null \
+              | python -c 'import json,sys; sys.exit(0 if json.load(sys.stdin).get("db") == "ok" else 1)'
+            then
+              echo "服务就绪（${i}s）"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "服务启动失败，日志尾部："
+          tail -n 80 app.log
+          exit 1
+
+      - name: 初始化系统管理员
+        run: |
+          # 全新库的首个注册用户自动成为系统管理员，后续套件都依赖 admin/Admin@123
+          curl -fsS -X POST "$BASE_URL/api/auth/register" \
+            -H 'Content-Type: application/json' \
+            -d '{"username":"admin","password":"Admin@123","display_name":"CI Admin"}' || true
+
+      - name: 回归套件
+        run: |
+          # 顺序有意义：perm 建出测试用户，group 依赖这些用户
+          failed=0
+          for suite in perm_test group_test tag_test restore_test dedup_test smoke_test; do
+            echo "::group::$suite"
+            python "scripts/$suite.py" "$BASE_URL" || failed=1
+            echo "::endgroup::"
+          done
+          exit $failed
+
+      - name: 失败时上传服务日志
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-log
+          path: app.log
+          if-no-files-found: ignore
+
+  # 部署链路：镜像能构建出来，才算能一键部署
+  docker-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: 构建镜像
+        run: docker build --build-arg PIP_INDEX_URL=https://pypi.org/simple -t docvault:ci .

@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<!--
+  SPDX-License-Identifier: AGPL-3.0-or-later
+  Copyright (C) 2026 DocVault Contributors
+-->
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>文档预览</title>
+<style>
+:root{--bg:#f8fafc;--panel:#ffffff;--line:#e5e7eb;--ink:#1f2937;--mut:#64748b;--brand:#2563eb}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:Inter,"PingFang SC","Microsoft YaHei",sans-serif;background:#eef1f5;color:var(--ink);overflow:hidden}
+#bar{height:44px;display:flex;align-items:center;gap:4px;padding:0 10px;background:var(--panel);border-bottom:1px solid var(--line);position:relative;z-index:5}
+#bar button{background:transparent;border:0;color:#475569;width:30px;height:30px;border-radius:7px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center}
+#bar button:hover{background:#f1f5f9;color:#0f172a}
+#bar .txt{width:auto;padding:0 10px;font-size:12.5px}
+#pg{font-size:12.5px;color:#475569;min-width:64px;text-align:center;font-variant-numeric:tabular-nums}
+#zl{font-size:12px;color:#64748b;min-width:46px;text-align:center;font-variant-numeric:tabular-nums}
+.sp{flex:1}
+#title{font-size:12.5px;color:#64748b;max-width:34%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#main{position:absolute;top:44px;left:0;right:0;bottom:0;display:flex}
+
+#side{width:184px;flex:0 0 184px;background:var(--bg);border-right:1px solid var(--line);
+  overflow-y:auto;overflow-x:hidden;padding:0 12px 16px;transition:width .16s,flex-basis .16s,padding .16s}
+#side.hide{width:0;flex-basis:0;border-right:0;padding:0;overflow:hidden}
+#side::-webkit-scrollbar{width:8px}
+#side::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:4px;border:2px solid var(--bg)}
+#side::-webkit-scrollbar-track{background:transparent}
+
+.side-head{position:sticky;top:0;z-index:2;background:linear-gradient(#f8fafc 76%,rgba(248,250,252,0));
+  padding:11px 2px 9px;font-size:11.5px;color:#94a3b8;letter-spacing:.02em}
+
+.thumb{position:relative;margin:0 auto 12px;width:100%;cursor:pointer;border-radius:8px;overflow:hidden;
+  border:1.5px solid #e2e8f0;background:#fff;transition:border-color .15s,box-shadow .15s}
+.thumb:hover{border-color:#bfdbfe;box-shadow:0 2px 8px rgba(15,23,42,.09)}
+.thumb img,.thumb canvas{display:block;width:100%;height:auto}
+.thumb.active{border-color:var(--brand);box-shadow:0 0 0 3px rgba(37,99,235,.14)}
+.thumb .no{position:absolute;right:6px;bottom:6px;font-size:10.5px;background:rgba(15,23,42,.72);color:#f8fafc;
+  padding:1px 6px;border-radius:6px;line-height:1.55;font-variant-numeric:tabular-nums}
+.thumb.active .no{background:var(--brand);color:#fff}
+
+#scroll{flex:1;overflow:auto;position:relative;background:#eef2f7;scroll-behavior:auto}
+#pages{padding:18px 14px 32px;display:flex;flex-direction:column;align-items:center;gap:16px}
+.page{background:#fff;box-shadow:0 2px 10px rgba(15,23,42,.12);border-radius:2px;position:relative;overflow:hidden}
+.page canvas{display:block;border-radius:2px}
+.page .ph{display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:12px}
+#wm{position:absolute;top:0;left:0;right:0;bottom:0;pointer-events:none;overflow:hidden;z-index:3}
+#wm .row{position:absolute;left:-40%;top:-40%;width:180%;height:180%;display:flex;flex-wrap:wrap;align-content:center;justify-content:center;gap:80px 120px;transform:rotate(-26deg);opacity:.085}
+#wm span{font-size:13px;color:#0f172a;white-space:nowrap;font-weight:600;letter-spacing:.05em}
+#err{padding:32px;color:#b91c1c;font-size:13.5px;line-height:1.8}
+#scroll::-webkit-scrollbar{width:10px;height:10px}
+#scroll::-webkit-scrollbar-thumb{background:#b7c2d0;border-radius:5px;border:2px solid #eef2f7}
+</style>
+</head>
+<body>
+<div id="bar">
+  <button id="tg" title="显示/隐藏缩略图">☰</button>
+  <span id="title"></span>
+  <span class="sp"></span>
+  <span id="pg">– / –</span>
+  <button id="zo" title="缩小">−</button>
+  <span id="zl">100%</span>
+  <button id="zi" title="放大">+</button>
+  <button class="txt" id="fit" title="适应宽度">适应宽度</button>
+  <button id="fs" title="全屏（Esc 退出）">⛶</button>
+</div>
+<div id="main">
+  <aside id="side"></aside>
+  <div id="scroll"><div id="pages"></div><div id="wm"></div></div>
+</div>
+
+<script src="/vendor/pdfjs/pdf.min.js"></script>
+<script>
+(function () {
+  const q = new URLSearchParams(location.search);
+  const SRC = q.get("src") || "";
+  const WM = q.get("wm") || "";
+  const TITLE = q.get("title") || "";
+  const START_THUMBS = q.get("thumbs") !== "0";
+
+  const elSide = document.getElementById("side");
+  const elPages = document.getElementById("pages");
+  const elScroll = document.getElementById("scroll");
+  const elPg = document.getElementById("pg");
+  const elZl = document.getElementById("zl");
+  const elWm = document.getElementById("wm");
+  if (TITLE) document.getElementById("title").textContent = TITLE;
+
+  if (WM) {
+    const row = document.createElement("div");
+    row.className = "row";
+    let html = "";
+    for (let i = 0; i < 24; i++) html += "<span>" + WM.replace(/[<>&]/g, "") + "</span>";
+    row.innerHTML = html;
+    elWm.appendChild(row);
+  }
+
+  pdfjsLib.GlobalWorkerOptions.workerSrc = "/vendor/pdfjs/pdf.worker.min.js";
+
+  const DPR = Math.min(window.devicePixelRatio || 1, 2);
+  const PAD = 12;
+  let pdf = null, total = 0, scale = 1, fitScale = 1, isFit = true;
+  const metas = [];          // {page, w, h, holder, canvas, rendered}
+  let current = 1, obs = null;
+
+  function setPgLabel() { elPg.textContent = current + " / " + (total || "–"); }
+  function setZoomLabel() { elZl.textContent = isFit ? "适应" : Math.round(scale * 100) + "%"; }
+
+  function paintWm() { /* 水印定位在视口上，无需跟随内容高度 */ }
+
+  async function boot() {
+    if (!SRC) { fail("缺少文档地址"); return; }
+    if (!window.pdfjsLib) { fail("阅读器组件加载失败"); return; }
+    try {
+      pdf = await pdfjsLib.getDocument({ url: SRC, withCredentials: false }).promise;
+      total = pdf.numPages;
+      if (!START_THUMBS) elSide.classList.add("hide");
+      await buildPages();
+      computeFit();
+      scale = fitScale;            // 初始就是适应宽度
+      applyScale();
+      buildThumbs();
+      attachObserver();
+      setPgLabel();
+      paintWm();
+    } catch (e) {
+      fail("无法加载文档：" + (e && e.message ? e.message : e));
+    }
+  }
+
+  function fail(msg) {
+    elPages.innerHTML = '<div id="err">' + msg + '</div>';
+    // 兜底：自建阅读器不可用时，直接把本页指向原始 PDF，交给浏览器内置阅读器
+    if (SRC) setTimeout(() => { try { location.replace(SRC); } catch (e) {} }, 900);
+  }
+
+  async function buildPages() {
+    for (let i = 1; i <= total; i++) {
+      const page = await pdf.getPage(i);
+      const vp = page.getViewport({ scale: 1 });
+      const holder = document.createElement("div");
+      holder.className = "page";
+      holder.dataset.page = i;
+      const ph = document.createElement("div");
+      ph.className = "ph";
+      ph.textContent = "第 " + i + " 页";
+      holder.appendChild(ph);
+      elPages.appendChild(holder);
+      metas.push({ page, w: vp.width, h: vp.height, holder, canvas: null, rendered: false });
+    }
+    fitScale = Math.max(...metas.map(m => m.w));
+  }
+
+  function computeFit() {
+    const avail = elScroll.clientWidth - PAD * 2 - 2;
+    fitScale = avail / Math.max(...metas.map(m => m.w));
+  }
+
+  function applyScale() {
+    for (const m of metas) {
+      m.holder.style.width = Math.floor(m.w * scale) + "px";
+      m.holder.style.height = Math.floor(m.h * scale) + "px";
+      if (m.canvas) {
+        m.canvas.style.width = Math.floor(m.w * scale) + "px";
+        m.canvas.style.height = Math.floor(m.h * scale) + "px";
+      }
+    }
+    setZoomLabel();
+  }
+
+  async function renderOne(m) {
+    if (m.rendered || m.busy) return;
+    m.busy = true;
+    const vp = m.page.getViewport({ scale: scale * DPR });
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.floor(vp.width);
+    canvas.height = Math.floor(vp.height);
+    const ctx = canvas.getContext("2d", { alpha: false });
+    try {
+      await m.page.render({ canvasContext: ctx, viewport: vp }).promise;
+      canvas.style.width = Math.floor(m.w * scale) + "px";
+      canvas.style.height = Math.floor(m.h * scale) + "px";
+      m.holder.innerHTML = "";
+      m.holder.appendChild(canvas);
+      m.canvas = canvas;
+      m.rendered = true;
+    } catch (e) { /* 渲染中断（缩放时常见），忽略 */ }
+    m.busy = false;
+  }
+
+  function attachObserver() {
+    if (obs) obs.disconnect();
+    obs = new IntersectionObserver(entries => {
+      for (const en of entries) {
+        if (!en.isIntersecting) continue;
+        const i = Number(en.target.dataset.page) - 1;
+        const m = metas[i];
+        if (m) renderOne(m);
+      }
+    }, { root: elScroll, rootMargin: "300px 0px" });
+    for (const m of metas) obs.observe(m.holder);
+
+    elScroll.addEventListener("scroll", onScroll, { passive: true });
+  }
+
+  let ticking = false;
+  function onScroll() {
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(() => {
+      ticking = false;
+      const top = elScroll.getBoundingClientRect().top;
+      let best = 1, bestD = Infinity;
+      for (const m of metas) {
+        const d = Math.abs(m.holder.getBoundingClientRect().top - top - 20);
+        if (d < bestD) { bestD = d; best = m.holder.dataset.page | 0; }
+      }
+      if (best !== current) {
+        current = best;
+        setPgLabel();
+        markThumb(current);
+      }
+    });
+  }
+
+  async function buildThumbs() {
+    const THUMB_W = 160;   // 缩略图渲染宽度（像素），与侧栏 184px 宽度匹配，保证清晰
+    elSide.innerHTML = "";
+    const head = document.createElement("div");
+    head.className = "side-head";
+    head.textContent = "共 " + metas.length + " 页";
+    elSide.appendChild(head);
+    for (let i = 0; i < metas.length; i++) {
+      const m = metas[i];
+      const t = document.createElement("div");
+      t.className = "thumb";
+      t.dataset.page = i + 1;
+      t.title = "第 " + (i + 1) + " 页";
+      t.addEventListener("click", () => scrollToPage(i + 1));
+      elSide.appendChild(t);
+      try {
+        const vp = m.page.getViewport({ scale: THUMB_W / m.w });
+        const c = document.createElement("canvas");
+        c.width = Math.floor(vp.width * DPR);
+        c.height = Math.floor(vp.height * DPR);
+        await m.page.render({ canvasContext: c.getContext("2d", { alpha: false }), viewport: vp }).promise;
+        const img = document.createElement("img");
+        img.src = c.toDataURL("image/jpeg", 0.7);
+        t.appendChild(img);
+      } catch (e) {}
+      const no = document.createElement("span");
+      no.className = "no";
+      no.textContent = i + 1;
+      t.appendChild(no);
+      if (i === 0) t.classList.add("active");
+    }
+  }
+
+  function markThumb(n) {
+    elSide.querySelectorAll(".thumb").forEach(t => {
+      t.classList.toggle("active", Number(t.dataset.page) === n);
+    });
+    const act = elSide.querySelector(".thumb.active");
+    if (act) act.scrollIntoView({ block: "nearest" });
+  }
+
+  function scrollToPage(n) {
+    const m = metas[n - 1];
+    if (m) elScroll.scrollTo({ top: m.holder.offsetTop - 8, behavior: "smooth" });
+  }
+
+  document.getElementById("tg").addEventListener("click", () => {
+    elSide.classList.toggle("hide");
+    computeFit();
+    if (isFit) { scale = fitScale; applyScale(); rerenderAll(); }
+  });
+  document.getElementById("zi").addEventListener("click", () => { isFit = false; scale = Math.min(scale * 1.2, 4); applyScale(); rerenderAll(); });
+  document.getElementById("zo").addEventListener("click", () => { isFit = false; scale = Math.max(scale / 1.2, 0.3); applyScale(); rerenderAll(); });
+  document.getElementById("fit").addEventListener("click", () => {
+    isFit = true; computeFit(); scale = fitScale; applyScale(); rerenderAll();
+  });
+
+  let rerTimer = null;
+  function rerenderAll() {
+    clearTimeout(rerTimer);
+    rerTimer = setTimeout(() => {
+      for (const m of metas) { m.rendered = false; if (!m.busy) { m.holder.innerHTML = ""; m.canvas = null; } }
+      for (const m of metas) {
+        const r = m.holder.getBoundingClientRect();
+        if (r.bottom > -300 && r.top < window.innerHeight + 300) renderOne(m);
+      }
+      paintWm();
+    }, 120);
+  }
+
+  const elFs = document.getElementById("fs");
+  elFs.addEventListener("click", async () => {
+    try {
+      if (!document.fullscreenElement) await document.documentElement.requestFullscreen();
+      else await document.exitFullscreen();
+    } catch (e) {}
+  });
+  document.addEventListener("fullscreenchange", () => {
+    elFs.textContent = document.fullscreenElement ? "⤡" : "⛶";
+    setTimeout(() => { computeFit(); if (isFit) { scale = fitScale; applyScale(); rerenderAll(); } }, 120);
+  });
+
+  let rzTimer = null;
+  window.addEventListener("resize", () => {
+    clearTimeout(rzTimer);
+    rzTimer = setTimeout(() => {
+      computeFit();
+      if (isFit) { scale = fitScale; applyScale(); rerenderAll(); }
+      paintWm();
+    }, 150);
+  });
+
+  boot();
+})();
+</script>
+</body>
+</html>

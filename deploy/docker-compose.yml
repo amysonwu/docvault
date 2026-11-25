@@ -1,0 +1,116 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 DocVault Contributors
+# DocVault 智档 —— 容器化部署（单端口 10001）
+#
+# 全部组件都在容器里：应用 / MySQL(GreatSQL) / OnlyOffice / 入口网关
+# 主机上只需要 Docker，不装 Python、不装 MySQL、不装 Node，也不写系统目录。
+#
+#   cd deploy && docker compose up -d --build
+#   浏览器访问 http://<主机IP>:10001
+#
+# 数据落在两个地方（都在本目录的相对路径，可迁移）：
+#   ./ 命名卷      → 数据库、OnlyOffice 内部数据
+#   ../data        → 文档原件（内容寻址存储，可直接备份/搬迁）
+#
+# 项目名 = deploy 目录名：同一台主机可部署多套实例（各自独立的数据卷与网络），
+# 互不干扰；对外端口用 .env 的 PUBLIC_PORT 区分。
+
+services:
+  # ---------- 数据库：仅集群内可见，不对主机暴露端口 ----------
+  db:
+    image: greatsql/greatsql:8.0.32-26
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASS:-DocVault_Root_2026}
+      DB_PASS: ${DB_PASS:-DocVault_2026}
+      TZ: Asia/Shanghai
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --default-time-zone=+08:00
+    volumes:
+      # GreatSQL 的数据目录是 /data/GreatSQL（不是 MySQL 官方的 /var/lib/mysql）
+      # 挂 /data 才能把真正的库文件落到命名卷上，否则数据留在容器可写层，重建即丢
+      - db-data:/data
+      # 首次启动建库建账号；口令取自环境变量 DB_PASS
+      - ./init.sh:/docker-entrypoint-initdb.d/00-init.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysql -h127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD -e 'SELECT 1' >/dev/null 2>&1 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 40s
+    networks: [net]
+
+  # ---------- OnlyOffice 文档服务器：不发布端口，只经网关同源转发 ----------
+  oo:
+    image: onlyoffice/documentserver:latest
+    restart: unless-stopped
+    environment:
+      JWT_ENABLED: "true"
+      JWT_HEADER: Authorization
+      JWT_SECRET: ${OO_SECRET:-change-me-oo-secret}
+      TZ: Asia/Shanghai
+    volumes:
+      - oo-data:/var/www/onlyoffice/Data
+      - oo-lib:/var/lib/onlyoffice
+      - oo-pg:/var/lib/postgresql
+      - oo-log:/var/log/onlyoffice
+      # 中文字体：官方镜像只带 Latin 字体，不挂这份目录，中文文档转 PDF 会掉字/换字体
+      - ${FONT_DIR:-../fonts}:/usr/share/fonts/truetype/custom:ro
+    networks: [net]
+
+  # ---------- 应用本体 ----------
+  app:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    image: docvault/app:1.0
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DOCVault_DB_HOST: db
+      DOCVault_DB_PORT: "3306"
+      DOCVault_DB_USER: docvault
+      DOCVault_DB_PASS: ${DB_PASS:-DocVault_2026}
+      DOCVault_DB_NAME: docvault
+      DOCVAULT_DATA_DIR: /app/data
+      # 浏览器侧：走与页面同源的 10001（网关把 OnlyOffice 前缀转给 oo）
+      DOCVault_OO_URL: http://127.0.0.1:${PUBLIC_PORT:-10001}
+      # 服务端侧：容器网络内直连文档服务器（转换 PDF 预览等）
+      DOCVault_OO_SERVER: http://oo
+      # 文档服务器回访应用（回调保存 / 取原件）
+      DOCVault_OO_INTERNAL: http://app:8000
+      DOCVault_OO_SECRET: ${OO_SECRET:-change-me-oo-secret}
+      DOCVault_JWT_SECRET: ${JWT_SECRET:-change-me-jwt-secret}
+      DOCVault_JWT_EXPIRE_HOURS: ${JWT_EXPIRE_HOURS:-24}   # 登录令牌有效期（小时）
+      DOCVault_MAX_UPLOAD_MB: "500"
+      TZ: Asia/Shanghai
+    volumes:
+      # 文档原件：内容寻址存储，放宿主机目录便于备份/迁移
+      - ${DATA_DIR:-../data}:/app/data
+    networks: [net]
+
+  # ---------- 唯一对外入口：10001 ----------
+  edge:
+    image: nginx:alpine
+    restart: unless-stopped
+    depends_on: [app, oo]
+    ports:
+      - "${PUBLIC_PORT:-10001}:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    networks: [net]
+
+networks:
+  net:
+    driver: bridge
+
+volumes:
+  db-data:
+  oo-data:
+  oo-lib:
+  oo-pg:
+  oo-log:

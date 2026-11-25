@@ -1,0 +1,68 @@
+智档 DocVault
+Copyright (C) 2026 DocVault Contributors
+
+本文件按 GNU AGPL-3.0 第 7 段的要求，说明本项目的来源与第三方组件归属。
+
+────────────────────────────────────────────────────────────
+1. 项目版权
+────────────────────────────────────────────────────────────
+
+本项目（除下列第三方组件外）由 DocVault Contributors 开发，
+以 GNU Affero General Public License v3.0 或更高版本（AGPL-3.0-or-later）发布。
+完整许可文本见仓库根目录 LICENSE 文件，或 https://www.gnu.org/licenses/agpl-3.0.html
+
+────────────────────────────────────────────────────────────
+2. 独立进程形式使用的第三方服务（不构成衍生作品，但需声明）
+────────────────────────────────────────────────────────────
+
+  · ONLYOFFICE Document Server
+    许可：GNU AGPL-3.0
+    用途：在线编辑（docx/xlsx/pptx）与文档转 PDF
+    形态：**独立容器 / 独立进程**，通过 HTTP 与本项目通信，本项目不链接、不内嵌其代码
+    来源：https://github.com/ONLYOFFICE/DocumentServer
+    注意：若你将本项目作为网络服务对外提供，你同时需要遵守 OO 自身的 AGPL 义务
+          （包括向使用者提供 OO 的源码获取方式）。本项目仅以其公开 HTTP API 调用它。
+
+  · GreatSQL / MySQL 8
+    许可：GPL-2.0（GreatSQL）/ GPL-2.0（MySQL）
+    用途：元数据与全文索引存储
+    形态：独立数据库服务，仅通过 SQL 协议访问
+
+  · Nginx
+    许可：BSD-2-Clause
+    用途：边缘反向代理与静态资源
+
+────────────────────────────────────────────────────────────
+3. 以库形式引入的第三方组件
+────────────────────────────────────────────────────────────
+
+详见 THIRD_PARTY.md 中的完整清单与许可类型。主要包括：
+
+  · Vue.js 3                MIT          （web/vendor/vue.global.prod.js，已内置）
+  · PDF.js                  Apache-2.0   （web/vendor/pdfjs/，已内置）
+  · Lucide Icons            ISC          （侧栏图标，SVG 内联于 web/index.html）
+                                          Copyright (c) Cole Bemis 2013-2022（Feather，MIT）
+                                          与 Lucide Contributors 2022
+  · FastAPI / Starlette     MIT
+  · SQLAlchemy              MIT
+  · PyMySQL                 MIT
+  · PyJWT                   MIT
+  · python-multipart        Apache-2.0
+  · python-docx / pptx      MIT
+  · openpyxl                MIT
+  · pypdf                   BSD-3-Clause
+  · Markdown (Python)       BSD-3-Clause
+  · cryptography            Apache-2.0 OR BSD-3-Clause
+  · requests                Apache-2.0
+  · zstandard               BSD-3-Clause
+  · Uvicorn                 BSD-3-Clause
+
+以上组件的完整许可文本可在其各自发行包中查阅；本项目未修改其源码。
+前端第三方文件均已放置于 web/vendor/ 下，运行期不请求任何外部 CDN。
+
+────────────────────────────────────────────────────────────
+4. 商标
+────────────────────────────────────────────────────────────
+
+"智档"、"DocVault" 名称与标识的使用规则见 TRADEMARK.md。
+AGPL-3.0 授予的是代码权利，不包含商标使用权。

@@ -1,0 +1,78 @@
+name: 🐞 Bug 报告
+description: 报告一个可复现的问题，帮助我们定位
+labels: ["bug", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢报告问题。**安全漏洞请勿在此提交**，请按 [SECURITY.md](../blob/main/SECURITY.md) 私下联系。
+
+  - type: input
+    id: version
+    attributes:
+      label: 版本 / build 标识
+      description: 页面左下角的 build 号，或 `curl /api/health` 返回的 build
+      placeholder: 例如 2026-11-24.43
+    validations:
+      required: true
+
+  - type: dropdown
+    id: deploy
+    attributes:
+      label: 部署方式
+      options:
+        - Docker Compose（deploy/ 一键编排）
+        - Docker Compose（仅 app + 外部数据库）
+        - 直接跑 uvicorn
+        - 其它（请在下方说明）
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: components
+    attributes:
+      label: 涉及模块
+      options:
+        - label: 登录 / 权限 / 用户组
+        - label: 上传 / 版本 / 回滚
+        - label: 在线编辑（OnlyOffice）
+        - label: 预览 / 水印
+        - label: 检索 / 标签
+        - label: 分享 / 离线回传
+        - label: 审计 / 统计
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: 复现步骤
+      description: 越具体越好；若涉及权限，请说明各账号角色
+      placeholder: |
+        1. 用 A 账号（空间内容操作员）打开 …
+        2. 点击 …
+        3. 看到 …
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: 期望结果 vs 实际结果
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: 日志 / 截图 / 报错
+      description: 请**脱敏**（去掉内网 IP、真实文档名、账号）；截图可直接拖入
+      render: shell
+    validations:
+      required: false
+
+  - type: input
+    id: env
+    attributes:
+      label: 环境
+      placeholder: 例如 Ubuntu 22.04 / 4C8G / Chrome 158 / MySQL 8.0.32
+    validations:
+      required: false

@@ -1,0 +1,2506 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<!--
+  SPDX-License-Identifier: AGPL-3.0-or-later
+  Copyright (C) 2026 DocVault Contributors
+-->
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>智档 DocVault</title>
+<script src="vendor/vue.global.prod.js"></script>
+<style>
+:root{--bg:#f1f5f9;--card:#fff;--bd:#e2e8f0;--tx:#1e293b;--mut:#64748b;--blue:#2563eb;--blue-d:#1d4ed8;--green:#16a34a;--red:#dc2626;--amber:#d97706;
+--shadow-sm:0 1px 2px rgba(15,23,42,.06);--shadow:0 1px 3px rgba(15,23,42,.08),0 6px 20px rgba(15,23,42,.06);--shadow-lg:0 24px 64px rgba(15,23,42,.28)}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:Inter,-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--tx);font-size:14px;-webkit-font-smoothing:antialiased}
+::-webkit-scrollbar{width:9px;height:9px}::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:5px}::-webkit-scrollbar-thumb:hover{background:#94a3b8}
+button{cursor:pointer;border:1px solid var(--bd);background:#fff;color:var(--tx);border-radius:8px;padding:7px 14px;font-size:13px;font-weight:500;white-space:nowrap;transition:all .15s ease;box-shadow:var(--shadow-sm)}
+button:hover{border-color:#c7d2de;background:#f8fafc;transform:translateY(-1px)}
+button:active{transform:translateY(0)}
+button.primary{background:var(--blue);color:#fff;border-color:var(--blue)}
+button.primary:hover{background:var(--blue-d);border-color:var(--blue-d)}
+button.danger{color:var(--red);border-color:#fecaca}
+button.danger:hover{background:#fef2f2;border-color:#fca5a5}
+button.sm{padding:4px 11px;font-size:12.5px;border-radius:7px}
+button:disabled{opacity:.45;cursor:not-allowed;transform:none}
+input,select,textarea{border:1px solid var(--bd);border-radius:8px;padding:8px 12px;font-size:13px;outline:none;transition:border .15s,box-shadow .15s;background:#fff}
+input:focus,select:focus,textarea:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(37,99,235,.12)}
+table{width:100%;border-collapse:collapse;background:var(--card);border-radius:10px;overflow:hidden}
+th,td{padding:11px 14px;text-align:left;border-bottom:1px solid var(--bd);font-size:13.5px;vertical-align:middle}
+th{color:var(--mut);font-weight:600;font-size:12px;letter-spacing:.04em;background:#f8fafc}
+tbody tr{transition:background .12s}
+tbody tr:hover{background:#f8fafc}
+tbody tr:last-child td{border-bottom:none}
+.tag{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:500;background:#eff6ff;color:var(--blue)}
+.tag.src{background:#f0fdf4;color:var(--green)}
+.tag.warn{background:#fffbeb;color:var(--amber)}
+.tag.ro{background:#fef9ec;color:#b45309}
+.fp-chk{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;color:var(--mut);white-space:nowrap;cursor:pointer}
+.fp-chk input{width:14px;height:14px;accent-color:var(--blue);cursor:pointer}
+.rowbtns{display:flex;gap:6px;flex-wrap:wrap}
+.login-wrap{display:flex;justify-content:center;align-items:center;height:100vh;background:linear-gradient(135deg,#dbeafe 0%,#f1f5f9 45%,#e0f2fe 100%)}
+.login-card{background:var(--card);border-radius:16px;padding:40px 36px;width:380px;box-shadow:0 20px 50px rgba(15,23,42,.12)}
+.login-card h1{font-size:24px;margin-bottom:6px;letter-spacing:-.01em}
+.login-card p{color:var(--mut);margin-bottom:24px;font-size:13px}
+.login-card input{width:100%;margin-bottom:12px}
+.login-card .primary{width:100%;padding:10px;font-size:14px}
+.layout{display:flex;height:100vh}
+.sidebar{width:240px;background:#0f172a;color:#e2e8f0;padding:18px 0 14px;flex-shrink:0;display:flex;flex-direction:column}
+.sidebar h2{font-size:16px;padding:0 18px 16px;color:#fff;font-weight:600;letter-spacing:-.01em;display:flex;align-items:center;gap:8px}
+.sidebar h2 svg{flex:0 0 auto;color:#93c5fd}
+.sidebar .item{position:relative;display:flex;align-items:center;gap:6px;padding:9px 12px;margin:1px 8px;border-radius:8px;cursor:pointer;font-size:13.5px;color:#cbd5e1;transition:background .15s,color .15s}
+.node-label{flex:1 1 auto;min-width:0;display:flex;align-items:center;gap:7px}
+.upd-name{font-size:12.5px;color:#334155;line-height:1.5}
+.upd-time{font-size:11.5px;color:#94a3b8;line-height:1.5;font-variant-numeric:tabular-nums}
+.node-label .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.node-ic{flex:0 0 16px;width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;color:#93c5fd}
+.sidebar .item.active .node-ic{color:#fff}
+/* 节点内联快捷操作：统一右对齐的操作组，各层级图标严格对齐 */
+.node-actions{flex:0 0 auto;display:flex;align-items:center;gap:1px;opacity:0;transition:opacity .12s;
+  pointer-events:none;margin-left:auto}
+.sidebar .item:hover .node-actions{opacity:1;pointer-events:auto}
+.side-add{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:4px;
+  color:#94a3b8;transition:background .12s,color .12s}
+.side-add svg{display:block}
+.side-add:hover{background:rgba(255,255,255,.16);color:#e2e8f0}
+.side-add.del:hover{background:rgba(239,68,68,.2);color:#fca5a5}
+.sidebar .item:hover{background:#1e293b;color:#fff}
+.sidebar .item.active{background:var(--blue);color:#fff;font-weight:500}
+.sidebar .item.sub2{font-size:13px;color:#a8b4c4;white-space:nowrap;
+  padding-left:calc(var(--trunk-x,20px) + 15px + var(--d,0) * 16px)}
+.sidebar .item.sub2 .f-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block}
+.sidebar .item.sub2.active{background:rgba(37,99,235,.22);color:#bfdbfe;font-weight:500}
+.sidebar .item.sub2.no-perm{color:#5b6779;cursor:not-allowed}
+.sidebar .item.sub2.no-perm:hover{background:transparent;color:#5b6779}
+/* 树状引导线：由每行数据算出「穿过本行的竖线 + 连到本行的横线」，
+   只画到真实存在的相邻节点为止，不会在首/末节点外留下悬空线头 */
+.sidebar .item .seg{position:absolute;background:rgba(148,163,184,.28);pointer-events:none}
+/* 文档库 → 空间：根节点向下垂的主干 */
+.sidebar .item.root.has-spaces::after{content:"";position:absolute;left:20px;top:calc(50% + 8px);bottom:-5px;width:1px;
+  background:rgba(148,163,184,.28);pointer-events:none}
+/* 主干：从空间图标中点向下垂，与首个目录的竖线相接 */
+.sidebar .item.sub.has-kids::after{content:"";position:absolute;left:var(--trunk-x,20px);top:calc(50% + 8px);bottom:-5px;width:1px;
+  background:rgba(148,163,184,.28);pointer-events:none}
+.f-noperm{margin-left:6px;font-size:10.5px;padding:1px 6px;border-radius:20px;background:#273244;color:#7d8899}
+.f-ic{display:inline-flex;width:13px;height:13px;flex:0 0 13px;margin-right:5px;color:#8ea3bd}
+.sidebar .item.sub2.active .f-ic{color:#c7dcff}
+.f-lock{font-size:10px;margin-left:4px;opacity:.7}
+.fp-switch{display:flex;align-items:center;gap:8px;margin-top:18px;font-size:13.5px;cursor:pointer}
+.fp-switch input{width:16px;height:16px;accent-color:var(--blue);cursor:pointer}
+.fp-item{display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--bd);border-radius:8px;margin-bottom:8px;background:#fcfdff}
+.fp-user{flex:1;font-size:13.5px}
+.fp-sel{border:1px solid var(--bd);border-radius:8px;padding:7px 10px;font-size:13px;background:#fff;color:var(--tx);cursor:pointer}
+.fp-tag{display:inline-block;padding:1px 6px;margin-right:6px;border-radius:5px;font-size:10.5px;background:#eef2ff;color:#4f46e5;border:1px solid #dfe3ff}
+/* ---- 用户组：树 + 成员 ---- */
+.g-wrap{display:grid;grid-template-columns:300px 1fr;gap:16px;align-items:start}
+.g-tree{border:1px solid var(--bd);border-radius:10px;background:#fff;padding:8px;max-height:calc(100vh - 210px);overflow:auto}
+.g-row{display:flex;align-items:center;gap:6px;padding:7px 8px;border-radius:7px;cursor:pointer;font-size:13.5px;color:var(--tx)}
+.g-row:hover{background:#f6f8fc}
+.g-row.on{background:#eef4ff;color:#1d4ed8;font-weight:600}
+.g-row .g-nm{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.g-row .g-cnt{font-size:11px;color:var(--mut);background:#f1f5f9;border-radius:10px;padding:1px 7px}
+.g-mark{color:#cbd5e1;font-size:11px;margin-right:-2px}
+.g-row .g-act{display:none;gap:4px}
+.g-row:hover .g-act{display:flex}
+.g-more{width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;border-radius:6px;color:#64748b}
+.g-more:hover{background:#e6ecf7;color:#1d4ed8}
+.g-empty{font-size:13px;color:var(--mut);padding:14px 10px;text-align:center}
+.g-sub{cursor:pointer;transition:border-color .12s,background .12s}
+.g-sub:hover{background:#f6f8fc;border-color:#bfd0ea}
+/* 组详情头部：直接显示当前组在树中的路径（如：研发部 / 平台组 / 二级组），末级加粗 */
+.g-path{display:flex;align-items:baseline;flex-wrap:wrap;gap:5px;font-size:15px;line-height:1.45}
+.g-crumb{color:var(--mut);cursor:pointer;padding:0 3px;border-radius:5px;transition:background .12s,color .12s}
+.g-crumb:hover{color:var(--blue);background:#eff4fd}
+.g-crumb.cur{color:var(--tx);font-weight:700;cursor:default}
+.g-crumb.cur:hover{background:transparent;color:var(--tx)}
+.g-sep{color:#cbd5e1;font-size:13px;user-select:none}
+/* 标签 chip 与联想 */
+.tagchips{display:flex;flex-wrap:wrap;gap:7px}
+.tchip{display:inline-flex;align-items:center;gap:6px;padding:4px 9px;border-radius:20px;
+  background:#eef2ff;color:#3f51b5;font-size:12.5px;border:1px solid #dfe3ff}
+.tchip b{cursor:pointer;font-weight:600;color:#8b93c9;font-size:13px;line-height:1}
+.tchip b:hover{color:#e11d48}
+.sugs{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
+.sug{font-size:12px;padding:3px 9px;border-radius:20px;background:#f1f5f9;color:#475569;cursor:pointer;border:1px solid #e2e8f0}
+.sug:hover{background:#e8eefb;color:#1d4ed8}
+.sug i{font-style:normal;color:#94a3b8;margin-left:5px;font-size:11px}
+.sidebar .sub{padding-left:34px;font-size:12.5px;color:#94a3b8}
+.sidebar .sub2{padding-left:50px;font-size:12px;color:#7c8ba1}
+.sidebar .foot{margin-top:auto;padding-top:16px}
+.main{flex:1;overflow:auto;padding:24px 28px}
+.toolbar{display:flex;gap:10px;margin-bottom:14px;align-items:center;flex-wrap:wrap}
+/* ---- 页头：空间/目录上下文（与内容操作分离） ---- */
+.page-head{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:12px;flex-wrap:wrap}
+.crumbs{display:flex;align-items:center;gap:8px;min-width:0}
+.crumb-root{font-size:15px;font-weight:700;color:var(--tx);cursor:pointer;white-space:nowrap}
+.crumb-root:hover{color:var(--blue)}
+.crumb-node{font-size:14px;color:#64748b;cursor:pointer;white-space:nowrap;max-width:220px;
+  overflow:hidden;text-overflow:ellipsis}
+.crumb-node:hover{color:var(--blue)}
+.crumb-node.cur{color:var(--tx);font-weight:600}
+.crumb-sep{color:#cbd5e1;font-size:13px;margin:0 1px}
+.head-meta{font-size:12.5px;color:#94a3b8;font-variant-numeric:tabular-nums}
+/* ---- 搜索框（范围选择内置） ---- */
+.search{position:relative;display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--bd);
+  border-radius:9px;padding:0 8px 0 10px;height:36px;flex:1 1 320px;max-width:520px;min-width:240px;
+  transition:border-color .14s,box-shadow .14s}
+/* 输入 # 时的标签联想 */
+.tag-sug{position:absolute;left:0;right:0;top:calc(100% + 6px);z-index:60;background:#fff;
+  border:1px solid var(--bd);border-radius:10px;box-shadow:var(--shadow-lg);padding:6px;max-height:280px;overflow:auto}
+.ts-item{display:flex;align-items:center;gap:10px;padding:7px 9px;border-radius:7px;cursor:pointer;font-size:13px}
+.ts-item.on{background:#eff4fd;color:var(--blue)}
+.ts-nm{flex:1;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ts-cnt{font-size:11.5px;color:var(--mut);flex:0 0 auto}
+.ts-empty{padding:9px 10px;font-size:12.5px;color:var(--mut)}
+.search:focus-within{border-color:var(--blue);box-shadow:0 0 0 3px rgba(37,99,235,.1)}
+.search .ic{color:#94a3b8;display:flex;flex:0 0 auto}
+.search input{border:0;outline:none;background:transparent;flex:1;min-width:0;font-size:13.5px;height:100%;color:var(--tx);padding:0;box-shadow:none}
+.search input::placeholder{color:#a9b4c2}
+.search .scope{border:0;border-left:1px solid var(--bd);background:transparent;font-size:12px;
+  color:#64748b;padding:0 0 0 9px;margin-left:2px;cursor:pointer;outline:none;height:22px;flex:0 0 auto;box-shadow:none}
+.chip-sel{height:36px;border:1px solid var(--bd);border-radius:9px;background:#fff;padding:0 10px;
+  font-size:13px;color:#475569;cursor:pointer;outline:none}
+.chip-sel:focus{border-color:var(--blue)}
+.btn-ghost{background:#fff;border:1px solid var(--bd);color:#334155}
+.btn-ghost:hover{background:#f8fafc;border-color:#cbd5e1;color:var(--tx)}
+.btn-icon{display:inline-flex;align-items:center;gap:6px}
+.btn-icon svg{display:block}
+/* 行内图标按钮统一对齐 */
+.ibtn{display:inline-flex;align-items:center;justify-content:center}
+.ibtn svg{display:block}
+.ibtn.edit{color:#2563eb;background:#eff6ff;border-color:#dbeafe}
+.ibtn.edit:hover{background:#dbeafe;border-color:#bfdbfe;color:#1d4ed8}
+.rowbtns{display:flex;gap:6px;align-items:center}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:18px;margin-bottom:16px;box-shadow:var(--shadow-sm)}
+.muted{color:var(--mut);font-size:12.5px}
+h4{font-size:13.5px;font-weight:600;color:#334155;letter-spacing:.01em}
+/* ---- 版本对比 ---- */
+.df-stats{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:12px 0 0}
+.df-stat{font-size:12.5px;padding:3px 11px;border-radius:20px;font-weight:500;letter-spacing:.01em}
+.df-stat.ins{background:#ecfdf5;color:#15803d;border:1px solid #bbf7d0}
+.df-stat.del{background:#fef2f2;color:#b91c1c;border:1px solid #fecdd3}
+.df-stat.neutral{background:#f1f5f9;color:#475569;border:1px solid #e2e8f0}
+.df-legend{display:flex;gap:20px;font-size:11.5px;color:#94a3b8;margin:2px 0 12px}
+.df-legend i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.df-legend .lg-del{background:#fecdd3;border:1px solid #fda4af}
+.df-legend .lg-ins{background:#bbf7d0;border:1px solid #86efac}
+.df-card{border:1px solid var(--bd);border-radius:10px;overflow:hidden;margin-bottom:10px;background:#fff}
+.df-card.df-insert{border-color:#bbf7d0}
+.df-card.df-delete{border-color:#fecdd3}
+.df-head{display:flex;align-items:center;gap:9px;padding:7px 12px;background:#fafbfd;border-bottom:1px solid var(--bd)}
+.df-badge{font-size:11px;font-weight:600;padding:1px 8px;border-radius:20px;letter-spacing:.02em}
+.df-replace .df-badge{background:#fffbeb;color:#b45309}
+.df-insert .df-badge{background:#f0fdf4;color:#15803d}
+.df-delete .df-badge{background:#fef2f2;color:#b91c1c}
+.df-label{font-size:11.5px;color:#94a3b8}
+.df-row{display:flex;gap:9px;padding:9px 12px 9px 10px;font-size:13px;line-height:1.85}
+.df-row .df-sign{flex:0 0 12px;text-align:center;font-weight:700;line-height:1.85;user-select:none}
+.df-row .df-text{flex:1;min-width:0;white-space:pre-wrap;word-break:break-word;color:#334155}
+.df-row.old{background:#fffafa}
+.df-row.old .df-sign{color:#dc2626}
+.df-row.new{background:#f8fdfa;border-top:1px dashed #e6edf3}
+.df-row.new .df-sign{color:#16a34a}
+.df-del{background:#fecdd3;color:#9f1239;border-radius:3px;padding:0 2px;text-decoration:line-through;text-decoration-color:rgba(159,18,57,.45)}
+.df-ins{background:#bbf7d0;color:#14532d;border-radius:3px;padding:0 2px;font-weight:500}
+.df-same{color:#475569}
+.modal-mask{position:fixed;inset:0;background:rgba(15,23,42,.45);backdrop-filter:blur(2px);display:flex;justify-content:center;align-items:center;z-index:10}
+.modal{position:relative;background:#fff;border-radius:14px;padding:30px 32px;width:1230px;max-width:94vw;min-height:80vh;max-height:94vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:var(--shadow-lg)}
+.modal-x{position:absolute;top:12px;right:14px;width:38px;height:38px;padding:0;border:0;background:transparent;color:#94a3b8;font-size:26px;line-height:1;border-radius:9px;display:flex;align-items:center;justify-content:center;box-shadow:none;z-index:6;transition:background .15s,color .15s}
+.modal-x:hover{background:#f1f5f9;color:#334155;border-color:transparent;transform:none}
+.modal h3{padding-right:44px}
+.pv-head b{padding-right:44px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.vh{flex:1 1 auto;min-height:120px;overflow:auto;border:1px solid var(--bd);border-radius:10px;margin-top:8px}
+.modal > *:not(.vh):not(.pv-body):not(.dh-body):not(.pv-doc){flex:0 0 auto}
+.vh table{border-radius:0;overflow:visible}
+.vh thead th{position:sticky;top:0;z-index:1;background:#f8fafc}
+.vh tbody tr:last-child td{border-bottom:none}
+.vlink{color:var(--blue);font-weight:700;text-decoration:none;cursor:pointer;border-bottom:1px dashed transparent}
+.vlink:hover{text-decoration:underline;border-bottom-color:var(--blue)}
+.vtags{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.vtags .tag{font-size:11px;padding:1px 8px;line-height:1.6}
+.vchk{width:15px;height:15px;cursor:pointer;accent-color:var(--blue);vertical-align:middle}
+.ibtn{padding:4px 8px !important;font-size:13px !important;line-height:1.25 !important}
+.doc-link{color:var(--tx);cursor:pointer;font-weight:600;text-decoration:none;border-bottom:1px dashed transparent;transition:color .12s,border-color .12s}
+.doc-link:hover{color:var(--blue);border-bottom-color:var(--blue)}
+/* Markdown 编辑：左右分栏 + 拖拽 + 全屏 */
+.ed-head{padding:9px 16px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--bd);background:#f8fafc;flex:0 0 auto}
+.ed-split{flex:1;display:flex;min-height:0;overflow:hidden}
+.ed-pane{display:flex;flex-direction:column;min-width:0}
+.ed-pane:last-child{flex:1 1 auto}
+.ed-mode-left .ed-pane,.ed-mode-right .ed-pane{flex:1 1 100%!important;width:100%!important}
+.ed-pane-head{display:flex;align-items:center;justify-content:space-between;padding:5px 12px;font-size:12px;color:var(--mut);background:#f8fafc;border-bottom:1px solid var(--bd);flex:0 0 auto}
+.ed-textarea{flex:1;border:0;outline:none;resize:none;padding:18px 22px;font-family:Consolas,"Courier New",monospace;font-size:13.5px;line-height:1.8;background:#fff;color:var(--tx)}
+.ed-divider{flex:0 0 8px;cursor:col-resize;background:linear-gradient(90deg,transparent,rgba(148,163,184,.28),transparent);position:relative;user-select:none}
+.ed-divider::after{content:"";position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:2px;height:34px;border-radius:2px;background:rgba(148,163,184,.45)}
+.ed-divider:hover{background:rgba(37,99,235,.18)}
+.ed-divider:hover::after{background:rgba(37,99,235,.55)}
+.ed-preview{padding:20px 24px !important;border-left:1px solid var(--bd);background:#fff;background-image:none !important}
+.dh-body{flex:1;min-height:0;overflow:auto;margin-top:10px}
+.share-box{background:#f8fafc;border:1px solid var(--bd);border-radius:10px;padding:12px 14px;margin-bottom:14px}
+.share-box .toolbar{margin-bottom:0}
+.share-chip{display:inline-flex;align-items:center;gap:6px;max-width:430px;background:#eff6ff;border:1px solid #dbeafe;border-radius:99px;padding:7px 14px;font-size:12.5px;color:var(--blue);cursor:pointer;transition:background .15s;line-height:1.4}
+.share-chip:hover{background:#dbeafe}
+.share-chip.copied{background:#f0fdf4;border-color:#bbf7d0;color:var(--green)}
+.share-chip .txt{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:350px;font-family:Consolas,monospace}
+.share-chip .ic{flex:0 0 auto}
+.modal h3{margin-bottom:16px;font-size:16px}
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#0f172a;color:#fff;padding:11px 22px;border-radius:10px;z-index:600;font-size:13px;box-shadow:var(--shadow-lg);max-width:70vw}
+.stale-bar{position:fixed;right:18px;bottom:18px;z-index:610;cursor:pointer;background:#1d4ed8;color:#fff;font-size:12.5px;padding:9px 14px;border-radius:10px;box-shadow:0 6px 20px rgba(29,78,216,.28)}
+.stale-bar:hover{background:#1e40af}
+.dlg-mask{position:fixed;inset:0;background:rgba(15,23,42,.45);backdrop-filter:blur(2px);display:flex;align-items:center;justify-content:center;z-index:400}
+.dlg{background:#fff;border-radius:12px;padding:22px 24px;width:440px;max-width:92vw;box-shadow:var(--shadow-lg);animation:pop .16s ease}
+@keyframes pop{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:scale(1)}}
+.dlg-title{font-size:14.5px;font-weight:600;white-space:pre-line;line-height:1.7;letter-spacing:.005em}
+.dlg-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
+.stat-line{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;font-size:13px;align-items:center}
+.stat-line span{background:#eff6ff;color:var(--blue);padding:3px 11px;border-radius:20px;font-size:12.5px}
+/* ---- 存储统计卡片 ---- */
+.stat-cards{display:flex;gap:12px;flex-wrap:wrap}
+.stat-card{flex:1 1 160px;min-width:160px;background:#f8fafc;border:1px solid var(--bd);border-radius:12px;padding:14px 16px}
+.stat-card .sc-label{font-size:12px;color:var(--mut);margin-bottom:6px}
+.stat-card .sc-value{font-size:22px;font-weight:700;color:var(--tx);letter-spacing:.01em}
+.stat-card .sc-sub{font-size:11.5px;color:var(--mut);margin-top:6px;line-height:1.5}
+.stat-card.accent{background:#eff6ff;border-color:#dbeafe}
+.stat-card.accent .sc-value{color:var(--blue)}
+.doc-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+/* ---- 内容预览 ---- */
+.pv-modal{width:1040px;padding:0;display:flex;flex-direction:column;height:92vh;min-height:0;max-height:94vh}
+.pv-head{display:flex;justify-content:space-between;align-items:center;padding:16px 58px 16px 22px;gap:12px;border-bottom:1px solid var(--bd);position:sticky;top:0;background:#fff;border-radius:14px 14px 0 0;z-index:1}
+.pv-head b{font-size:15px}
+.pv-body{padding:26px 34px 36px;line-height:1.75;font-size:14.5px;overflow:auto;flex:1;min-height:0;color:#334155;
+  background-image:repeating-linear-gradient(-45deg,rgba(148,163,184,.055) 0 2px,transparent 2px 26px)}
+.pv-wm{padding:7px 34px;font-size:11.5px;color:#94a3b8;border-bottom:1px solid var(--bd);background:#fcfdfe;letter-spacing:.01em;user-select:none}
+/* 保真预览：Office/PDF 转 PDF 后交给浏览器原生阅读器渲染，版式与原件一致 */
+.pv-modal > .pv-doc{position:relative;flex:1 1 auto;min-height:0;background:#eef1f5;overflow:hidden;display:flex}
+.pv-doc > .pv-body{flex:1 1 auto;min-width:0}
+.pv-frame{flex:1 1 auto;width:100%;height:100%;min-height:0;border:0;display:block;background:#eef1f5}
+.pv-img-wrap{flex:1 1 auto;min-width:0;overflow:auto;display:flex;align-items:flex-start;justify-content:center;padding:20px}
+.pv-img{max-width:100%;box-shadow:0 2px 14px rgba(15,23,42,.14);border-radius:4px;background:#fff}
+.pv-wm-layer{position:absolute;inset:-30%;pointer-events:none;display:flex;flex-wrap:wrap;
+  align-content:center;justify-content:center;gap:70px 110px;transform:rotate(-26deg);opacity:.09;z-index:2}
+.pv-loading{display:flex;align-items:center;gap:10px;color:#64748b;font-size:13.5px;padding:10px 0}
+.spin{width:14px;height:14px;border:2px solid #cbd5e1;border-top-color:var(--blue);border-radius:50%;display:inline-block;animation:sp .8s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.pv-wm-layer span{font-size:13px;color:#0f172a;white-space:nowrap;font-weight:600;letter-spacing:.05em}
+.pv-body h1,.pv-body h2,.pv-body h3,.pv-body h4,.pv-body h5,.pv-body h6{margin:22px 0 10px;line-height:1.4;letter-spacing:-.01em;color:var(--tx);font-weight:700}
+.pv-body h1{font-size:19px;padding-bottom:7px;border-bottom:1px solid var(--bd)}
+.pv-body h2{font-size:16.5px}
+.pv-body h3{font-size:15.5px}
+.pv-body h4,.pv-body h5,.pv-body h6{font-size:14.5px}
+.pv-body h1:first-child,.pv-body h2:first-child,.pv-body h3:first-child{margin-top:0}
+.pv-body p{margin:0 0 .68em}
+.pv-body ul,.pv-body ol{margin:.35em 0 .9em;padding-left:1.65em}
+.pv-body li{margin:.22em 0}
+.pv-body li::marker{color:var(--mut)}
+.pv-body strong{font-weight:600;color:#0f172a}
+.pv-body em{font-style:italic}
+.pv-body u{text-decoration:underline;text-underline-offset:2px}
+.pv-body pre{white-space:pre-wrap;font-family:ui-monospace,Consolas,monospace;font-size:13px;line-height:1.8;background:#f8fafc;border:1px solid var(--bd);border-radius:10px;padding:18px;margin:12px 0}
+.pv-body .pv-table{border-collapse:collapse;margin:14px 0;width:100%;font-size:13.5px}
+.pv-body .pv-table th,.pv-body .pv-table td{border:1px solid #d8e0ea;padding:7px 11px;text-align:left;vertical-align:top;line-height:1.6}
+.pv-body .pv-table th{background:#f6f8fb;font-weight:600;color:var(--tx)}
+.pv-body .pv-table tr:nth-child(even) td{background:#fcfdfe}
+/* Markdown 预览排版 */
+.pv-body table{border-collapse:collapse;margin:16px 0;width:100%;font-size:13.5px}
+.pv-body table th,.pv-body table td{border:1px solid #d8e0ea;padding:7px 11px;text-align:left;vertical-align:top;line-height:1.6}
+.pv-body table th{background:#f6f8fb;font-weight:600;color:var(--tx)}
+.pv-body table tr:nth-child(even) td{background:#fcfdfe}
+.pv-body blockquote{margin:14px 0;padding:10px 16px;border-left:3px solid #cbd5e1;background:#f8fafc;color:#475569;border-radius:0 8px 8px 0}
+.pv-body blockquote p:last-child{margin-bottom:0}
+.pv-body code{font-family:ui-monospace,Consolas,monospace;font-size:12.5px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:5px;padding:1px 5px;color:#0f172a}
+.pv-body pre code{background:none;border:0;padding:0;font-size:13px;color:inherit}
+.pv-body hr{border:0;border-top:1px solid var(--bd);margin:20px 0}
+.pv-body img{max-width:100%;border-radius:8px}
+.pv-body a{color:var(--blue);text-decoration:none;border-bottom:1px solid rgba(37,99,235,.35)}
+.pv-body a:hover{border-bottom-color:var(--blue)}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="toast" v-if="toast">{{ toast }}</div>
+  <div class="stale-bar" v-if="staleBuild" @click="reloadPage" title="服务端已更新，刷新以加载最新界面">
+    系统已更新到新版本，点此刷新
+  </div>
+
+  <!-- 登录/注册 -->
+  <div class="login-wrap" v-if="!token">
+    <div class="login-card">
+      <h1>智档 DocVault</h1>
+      <p>私有部署 · 版本溯源 · 在线协同 · 全程审计</p>
+      <input v-model.trim="auth.username" placeholder="用户名" @keyup.enter="doAuth">
+      <input v-model="auth.password" type="password" placeholder="密码" @keyup.enter="doAuth">
+      <input v-if="auth.mode==='register'" v-model.trim="auth.displayName" placeholder="显示名（可选）" @keyup.enter="doAuth">
+      <button class="primary" style="width:100%" @click="doAuth">{{ auth.mode==='login'?'登录':'注册' }}</button>
+      <p style="margin-top:14px;text-align:center">
+        <a href="#" style="color:var(--blue);font-size:13px" @click.prevent="auth.mode = auth.mode==='login'?'register':'login'">
+          {{ auth.mode==='login' ? '没有账号？注册（首个用户自动成为管理员）' : '已有账号？去登录' }}
+        </a>
+      </p>
+    </div>
+  </div>
+
+  <!-- 主界面 -->
+  <div class="layout" v-else>
+    <div class="sidebar">
+      <h2><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><path d="M6.7 4.6v14.8" stroke-width="2.6"/><path d="M12.1 6.3 16.4 5.1l2.9 13.4-4.3 1.2z" stroke-width="1.7"/></svg>智档 DocVault</h2>
+      <div class="item root" @click="pickRoot" :class="{active: view==='docs' && navFocus==='root', 'has-spaces': spaceRows.length}">
+        <span class="node-label"><span class="node-ic"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span><span class="nm">文档库</span></span>
+        <span class="node-actions">
+          <span class="side-add" @click.stop="newSpace()" title="新建空间">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+          </span>
+        </span>
+      </div>
+      <template v-for="s in spaceRows" :key="'sp'+s.id">
+        <div class="item sub" @click="switchSpace(s.id)" :class="{active: view==='docs' && navFocus==='space' && spaceId===s.id, 'has-kids': spaceId===s.id && folderRows.length}">
+          <i class="seg" v-for="(sg, sgi) in s.segs" :key="'sgs'+sgi"
+             :style="{left: sg.left, top: sg.top, width: sg.w + 'px', height: sg.h}"></i>
+          <span class="node-label" @dblclick.stop="renameSpace(s)" :title="(s.owner_id===user.id || s.my_admin || s.is_system_admin) ? '双击可重命名' : s.name"><span class="node-ic"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z"/><path d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12"/><path d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17"/></svg></span><span class="nm">{{ s.name }}</span></span>
+          <span class="node-actions">
+            <span class="side-add del" v-if="user && user.role==='admin'" @click.stop="deleteSpace(s)" title="删除空间（仅系统管理员）">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M6 6l12 12M18 6L6 18"/></svg>
+            </span>
+            <span class="side-add" v-if="s.my_admin" @click.stop="openPerm('space', s.id, s.name)" title="权限设置：空间成员与授权">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="3.1"/><path d="M12 2.6v2.6M12 18.8v2.6M4.4 12H2M22 12h-2.4M5.7 5.7L7.5 7.5M16.5 16.5l1.8 1.8M18.3 5.7L16.5 7.5M7.5 16.5l-1.8 1.8"/></svg>
+            </span>
+            <span class="side-add" v-if="s.owner_id===user.id || s.my_admin || s.is_system_admin" @click.stop="renameSpace(s)" title="改名">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/></svg>
+            </span>
+            <span class="side-add" v-if="s.my_content==='write'" @click.stop="quickNewFolder(s, null)" title="加目录：在该空间新建目录">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+            </span>
+            <span class="side-add" v-if="s.my_content==='write'" @click.stop="quickNewDoc(s, null)" title="加文档：在空间根新建文档">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M7 3h7l4 4v14H7z"/><path d="M14 3v4h4"/><path d="M10.5 13h5M13 10.5v5"/></svg>
+            </span>
+          </span>
+        </div>
+        <template v-if="spaceId===s.id">
+          <div class="item sub2" v-for="f in folderRows" :key="'fo'+f.id" @click="pickFolder(f.id)"
+               :class="{active: view==='docs' && navFocus==='folder' && folderId===f.id, 'no-perm': !f.can_read}"
+               :style="{'--d': f.depth}"
+               :title="f.can_read ? '' : '无访问权限：该目录未授权给你'">
+            <i class="seg" v-for="(s, si) in f.segs" :key="'sg'+si"
+               :style="{left: s.left, top: s.top, width: s.w + 'px', height: s.h}"></i>
+            <span class="node-label" @dblclick.stop="f.can_manage && renameFolder(f)">
+              <span class="f-ic"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg></span>{{ f.name }}<span class="f-lock" v-if="f.is_private" title="私有目录：仅受邀成员可见">🔒</span>
+              <span class="f-noperm" v-if="!f.can_read">无权限</span>
+            </span>
+            <span class="node-actions">
+              <span class="side-add" v-if="f.can_manage" @click.stop="openFolderPerm(f)" title="权限设置：目录成员与授权">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="3.1"/><path d="M12 2.6v2.6M12 18.8v2.6M4.4 12H2M22 12h-2.4M5.7 5.7L7.5 7.5M16.5 16.5l1.8 1.8M18.3 5.7L16.5 7.5M7.5 16.5l-1.8 1.8"/></svg>
+              </span>
+              <span class="side-add" v-if="f.can_manage" @click.stop="renameFolder(f)" title="改名">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/></svg>
+              </span>
+              <span class="side-add" v-if="f.my_content==='write'" @click.stop="quickNewFolder(s, f)" title="加目录：在该目录下新建子目录">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+              </span>
+              <span class="side-add" v-if="f.my_content==='write'" @click.stop="quickNewDoc(s, f)" title="加文档：在该目录新建文档">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M7 3h7l4 4v14H7z"/><path d="M14 3v4h4"/><path d="M10.5 13h5M13 10.5v5"/></svg>
+              </span>
+            </span>
+          </div>
+        </template>
+      </template>
+      <div class="item" @click="openTrash" :class="{active: view==='trash'}"><span class="node-label"><span class="node-ic"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><path d="M10 11v6"/><path d="M14 11v6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></span><span class="nm">回收站（30 天可恢复）</span></span></div>
+      <div class="item" @click="loadTagView" :class="{active: view==='tags'}"><span class="node-label"><span class="node-ic"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/><circle cx="7.5" cy="7.5" r=".5" fill="currentColor" stroke="none"/></svg></span><span class="nm">标签</span></span></div>
+      <div class="item" v-if="user && user.role==='admin'" @click="loadGroups" :class="{active: view==='groups'}"><span class="node-label"><span class="node-ic"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><path d="M16 3.128a4 4 0 0 1 0 7.744"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><circle cx="9" cy="7" r="4"/></svg></span><span class="nm">用户组</span></span></div>
+      <div class="item" v-if="user && user.role==='admin'" @click="loadAudit" :class="{active: view==='audit'}"><span class="node-label"><span class="node-ic"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg></span><span class="nm">审计日志</span></span></div>
+      <div class="item" v-if="user && user.role==='admin'" @click="loadStats" :class="{active: view==='stats'}"><span class="node-label"><span class="node-ic"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg></span><span class="nm">存储统计</span></span></div>
+      <div class="item foot" @click="logout" style="color:#94a3b8">退出（{{ user ? user.display_name : '' }}）</div>
+      <div style="padding:2px 14px 10px;font-size:10.5px;color:#64748b;letter-spacing:.02em">build {{ buildTag }}</div>
+    </div>
+
+    <div class="main">
+      <!-- 文档列表 -->
+      <template v-if="view==='docs' || view==='trash'">
+        <!-- 上下文：我在哪个空间/目录（管"位置"） -->
+        <div class="page-head" v-if="view==='docs'">
+          <div class="crumbs">
+            <span class="crumb-root" @click="pickRoot" title="返回空间根">{{ space ? space.name : '全部空间' }}</span>
+            <template v-for="(p, i) in folderPath" :key="p.id">
+              <span class="crumb-sep">/</span>
+              <span class="crumb-node" :class="{ cur: i === folderPath.length - 1 }"
+                @click="pickFolder(p.id)" :title="`进入「${p.name}」`">{{ p.name }}</span>
+            </template>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px">
+            <span class="head-meta">{{ docs.length }} 个文档</span>
+          </div>
+        </div>
+
+        <!-- 内容操作：搜索 / 筛选 / 上传 / 新建（管"文档"） -->
+        <div class="toolbar" v-if="view==='docs'">
+          <div class="search">
+            <span class="ic"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4 4"/></svg></span>
+            <input v-model.trim="searchQ" placeholder="搜索标题或正文内容…（输入 # 可联想标签）"
+                   @input="onSearchInput" @focus="onSearchFocus" @blur="hideTagSug"
+                   @keydown.down.prevent="moveTagSug(1)" @keydown.up.prevent="moveTagSug(-1)"
+                   @keydown.enter.prevent="onSearchEnter" @keydown.esc="hideTagSug">
+            <select class="scope" v-model="searchScope" @change="onScopeChange" title="检索范围">
+              <option value="all">全部空间</option><option value="space">本空间</option>
+            </select>
+            <div class="tag-sug" v-if="tagSugOpen">
+              <div class="ts-item" v-for="(t, i) in tagSuggest" :key="t.name" :class="{ on: i === tagSugIdx }"
+                   @mousedown.prevent="applyTagSug(t.name)" @mouseenter="tagSugIdx = i">
+                <span class="ts-nm">#{{ t.name }}</span>
+                <span class="ts-cnt">{{ t.version_count }} 个版本 · {{ t.doc_count }} 个文档</span>
+              </div>
+              <div class="ts-empty" v-if="!tagSuggest.length">没有匹配「{{ tagFrag }}」的标签</div>
+            </div>
+          </div>
+          <select class="chip-sel" v-model="searchTag" @change="doSearch"
+                  title="按标签筛选：标签指向具体版本，命中的文档会带出该版本信息">
+            <option value="">全部标签</option>
+            <option v-for="t in tagOptions" :key="t.name" :value="t.name">#{{ t.name }}（{{ t.version_count }}）</option>
+          </select>
+          <select class="chip-sel" v-model="filterExt" @change="onExtChange">
+            <option value="">全部格式</option><option v-for="e in exts" :key="e">{{ e }}</option>
+          </select>
+          <span style="flex:1"></span>
+          <button class="primary btn-icon" @click="uploadClick">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M12 19V8"/><path d="M8 11l4-4 4 4"/><path d="M5 19h14"/></svg>
+            上传文档
+          </button>
+          <input type="file" ref="fileInput" style="display:none" @change="doUpload">
+        </div>
+        <table>
+          <thead><tr><th>文档名</th><th>格式</th><th>当前版本</th><th>大小</th><th>状态</th><th>标签</th><th>最后更新</th><th>操作</th></tr></thead>
+          <tbody>
+            <tr v-for="d in docs" :key="d.id">
+              <td>
+                <a class="doc-link" @click="previewDoc(d)" :title="`查看「${d.name}${d.ext}」内容`">{{ d.name }}</a>
+              </td>
+              <td><span class="tag">{{ d.ext }}</span></td>
+              <td>v{{ d.latest_seq }}</td>
+              <td>{{ fmtSize(d.size) }}</td>
+              <td>
+                <span class="tag warn" v-if="d.lock_owner_name && d.lock_owner_id!==user.id" title="该文档正被他人打开编辑，你仍可同时编辑，保存各自生成新版本">👥 {{ d.lock_owner_name }} 正在编辑</span>
+                <span class="tag src" v-else-if="d.my_content==='write'" title="你对该文档有写权限">可编辑</span>
+                <span class="tag warn" v-else-if="d.my_source==='system'" title="系统管理员默认只看元数据，不可查看业务内容；点文档名可按需申请临时访问权限（JIT，2 小时自动失效）">需提权</span>
+                <span class="tag ro" v-else title="你对该文档只有查看权限">只读</span>
+              </td>
+              <td>
+                <span class="tag" v-for="t in (d.tags || []).slice(0, 2)" :key="t" style="margin-right:4px">{{ t }}</span>
+                <span class="muted" v-if="(d.tags || []).length > 2" style="font-size:11px">+{{ d.tags.length - 2 }}</span>
+                <span class="muted" v-if="!(d.tags || []).length" style="font-size:11.5px">—</span>
+              </td>
+              <td>
+                <div class="upd-name">{{ d.updater_name || "—" }}</div>
+                <div class="upd-time">{{ fmtTime(d.updated_at) }}</div>
+              </td>
+              <td>
+                <div class="rowbtns">
+                  <button class="sm ibtn" @click="previewDoc(d)" title="查看内容（直接预览，不打开详情）">
+                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.06 12.35a1 1 0 0 1 0-.7 10.75 10.75 0 0 1 19.88 0 1 1 0 0 1 0 .7 10.75 10.75 0 0 1-19.88 0"/><circle cx="12" cy="12" r="3"/></svg>
+                  </button>
+                  <button class="sm ibtn" @click="openDoc(d)" title="详情：版本历史 / 分享 / 权限">
+                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><circle cx="12" cy="7.8" r="1" fill="currentColor" stroke="none"/></svg>
+                  </button>
+                  <button class="sm ibtn edit" v-if="view==='docs' && d.my_content==='write' && ['docx','xlsx','pptx','md','txt'].includes(d.ext.slice(1).toLowerCase())" @click="quickEdit(d)" title="直接进入编辑">
+                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/></svg>
+                  </button>
+                  <button class="sm ibtn" @click="downloadDoc(d)" title="下载当前版本">
+                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 4v10"/><path d="M8 10l4 4 4-4"/><path d="M5 19h14"/></svg>
+                  </button>
+                  <button class="sm ibtn danger" v-if="view==='docs' && user && user.role==='admin'" @click="trashDoc(d)" title="删除（移入回收站，30 天可恢复）">
+                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16"/><path d="M9.5 7V5h5v2"/><path d="M6.5 7l1 12h9l1-12"/></svg>
+                  </button>
+                  <button class="sm ibtn" v-if="view==='trash' && user && user.role==='admin'" @click="restoreDoc(d)" title="恢复文档">
+                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4.5 10a8 8 0 1 1 2.2 6.6"/><path d="M4.5 5v5h5"/></svg>
+                  </button>
+                </div>
+              </td>
+            </tr>
+            <tr v-if="!docs.length"><td colspan="8" class="muted" style="text-align:center;padding:30px">暂无文档</td></tr>
+          </tbody>
+        </table>
+      </template>
+
+      <!-- 标签：按版本标签检索 -->
+      <div class="card" v-if="view==='tags'">
+        <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:14px">
+          <h3 style="margin:0">标签</h3>
+          <span class="muted" style="font-size:12.5px">标签指向具体历史版本（类似 git tag）· 点标签查看打了该标签的全部版本</span>
+        </div>
+        <div class="g-wrap">
+          <div class="g-tree">
+            <div class="g-empty" v-if="!tagList.length">还没有标签，可在文档详情的“版本历史”里给某个版本打标签</div>
+            <div class="g-row" v-for="t in tagList" :key="t.name" :class="{on: tagSel===t.name}" @click="pickTag(t.name)">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" style="flex:0 0 auto;opacity:.7"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/></svg>
+              <span class="g-nm">{{ t.name }}</span>
+              <span class="g-cnt">{{ t.version_count }} 个版本</span>
+            </div>
+          </div>
+          <div v-if="tagSel">
+            <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:10px">
+              <h4 style="margin:0">#{{ tagSel }}</h4>
+              <span class="muted" style="font-size:12.5px">{{ tagResults.length }} 个版本 · {{ tagDocCount }} 个文档</span>
+            </div>
+            <table>
+              <thead><tr><th>文档</th><th>标签所在版本</th><th>打标签时间</th><th>打标签人</th><th>操作</th></tr></thead>
+              <tbody>
+                <tr v-for="r in tagResults" :key="r.document.id + '-' + r.version.seq">
+                  <td>
+                    <a class="doc-link" @click="openTagResult(r)" :title="'打开并查看 v' + r.version.seq">{{ r.document.name }}{{ r.document.ext }}</a>
+                    <div class="muted" style="font-size:11.5px">{{ r.document.space_name }}</div>
+                  </td>
+                  <td><span class="tag">v{{ r.version.seq }}</span>
+                      <span class="tag src" v-if="r.is_latest" style="margin-left:4px">最新</span></td>
+                  <td>{{ fmtTime(r.tagged_at) }}</td>
+                  <td>{{ r.tagged_by || '—' }}</td>
+                  <td><div class="rowbtns">
+                    <button class="sm ibtn" @click="openTagResult(r)" title="查看该版本">👁</button>
+                    <button class="sm ibtn" @click="downloadTagVersion(r)" title="下载该版本">⬇</button>
+                  </div></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div v-else class="muted" style="font-size:13px;padding:10px">在左侧选择一个标签</div>
+        </div>
+      </div>
+
+      <!-- 用户组 -->
+      <div class="card" v-if="view==='groups'">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+          <h3 style="margin:0">用户组</h3>
+          <span class="muted" style="font-size:12.5px">多级组织树 · 授权给组 = 组内所有人（含子组成员）</span>
+          <span style="flex:1"></span>
+          <button class="primary btn-icon" @click="newGroup(null)" title="在根下新建用户组">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+            新建组
+          </button>
+        </div>
+
+        <div class="g-wrap">
+          <!-- 组树 -->
+          <div class="g-tree">
+            <div class="g-empty" v-if="!groupRows.length">还没有用户组，点右上角「新建组」</div>
+            <div class="g-row" v-for="g in groupRows" :key="g.id" :class="{on: groupSel===g.id}"
+                 :style="{paddingLeft: (8 + g.depth*16) + 'px'}" @click="selectGroup(g.id)">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round" style="flex:0 0 auto;opacity:.75"><circle cx="9" cy="8" r="3"/><path d="M4 19c0-2.7 2.2-4.4 5-4.4s5 1.7 5 4.4"/></svg>
+              <span class="g-mark" v-if="g.depth">└</span>
+              <span class="g-nm" :title="g.description || g.name">{{ g.name }}</span>
+              <span class="g-cnt">{{ g.member_count }}</span>
+              <span class="g-act">
+                <span class="g-more" @click.stop="newGroup(g.id)" title="新建子组">＋</span>
+                <span class="g-more" @click.stop="renameGroup(g)" title="重命名">✎</span>
+                <span class="g-more" @click.stop="deleteGroup(g)" title="删除（含子组）">✕</span>
+              </span>
+            </div>
+          </div>
+
+          <!-- 组详情 -->
+          <div v-if="groupDetail">
+            <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:6px">
+              <div class="g-path" :title="'当前组在组织树中的位置'">
+                <template v-for="(p, i) in groupPath" :key="p.id">
+                  <span v-if="i" class="g-sep">/</span>
+                  <span class="g-crumb" :class="{ cur: i === groupPath.length - 1 }"
+                        @click="i < groupPath.length - 1 && selectGroup(p.id)"
+                        :title="i < groupPath.length - 1 ? '打开上级组「' + p.name + '」' : ''">{{ p.name }}</span>
+                </template>
+              </div>
+              <span style="flex:1"></span>
+              <span class="muted" style="font-size:12.5px">{{ groupDetail.members.length }} 人</span>
+            </div>
+            <p class="muted" style="font-size:12.5px;margin:0 0 12px" v-if="groupDetail.description">{{ groupDetail.description }}</p>
+
+            <h4 style="margin:14px 0 8px">成员</h4>
+            <div v-if="!groupDetail.members.length" class="muted" style="font-size:13px">暂无成员</div>
+            <div class="fp-item" v-for="m in groupDetail.members" :key="m.user_id">
+              <span class="fp-user">{{ m.display_name }}<span class="muted" style="font-size:12px"> @{{ m.username }}</span></span>
+              <button class="sm ibtn danger" @click="removeGroupMember(m)" title="移出该组">✕</button>
+            </div>
+            <div class="toolbar" style="margin-top:10px">
+              <select class="fp-sel" v-model="groupAddUser" style="min-width:200px">
+                <option :value="null">选择用户…</option>
+                <option v-for="u in groupUserCandidates" :key="u.user_id" :value="u.user_id">
+                  {{ u.display_name }}（{{ u.username }}）
+                </option>
+              </select>
+              <button class="primary" :disabled="!groupAddUser" @click="addGroupMember">加入本组</button>
+            </div>
+            <p class="muted" style="font-size:12px;margin-top:8px">
+              一个用户可以同时属于多个组；组是多级树，授权给上级组时下级组成员同样生效。
+            </p>
+
+            <template v-if="groupDetail.children.length">
+              <h4 style="margin:18px 0 8px">子组（{{ groupDetail.children.length }}）</h4>
+              <div class="fp-item g-sub" v-for="c in groupDetail.children" :key="c.id"
+                   @click="selectGroup(c.id)" title="点击打开该子组">
+                <span class="fp-user">↳ {{ c.name }}</span>
+                <span class="g-cnt">{{ c.member_count }} 人</span>
+              </div>
+            </template>
+          </div>
+          <div v-else class="muted" style="font-size:13px;padding:10px">在左侧选择一个组，维护成员与子组</div>
+        </div>
+      </div>
+
+      <!-- 审计 -->
+      <div class="card" v-if="view==='audit'">
+        <h3 style="margin-bottom:10px">操作审计日志（F-50）</h3>
+        <table>
+          <thead><tr><th>时间</th><th>用户</th><th>操作</th><th>对象</th><th>详情</th><th>IP</th></tr></thead>
+          <tbody><tr v-for="l in auditLogs" :key="l.id">
+            <td>{{ fmtTime(l.created_at) }}</td><td>{{ l.user }}</td><td><span class="tag">{{ l.action }}</span></td>
+            <td>{{ l.target_type }}#{{ l.target_id }}</td><td class="muted">{{ JSON.stringify(l.detail) }}</td><td>{{ l.ip }}</td>
+          </tr></tbody>
+        </table>
+      </div>
+
+      <!-- 统计 -->
+      <div class="card" v-if="view==='stats'">
+        <h3 style="margin-bottom:14px">存储统计</h3>
+        <div class="stat-cards" v-if="stats">
+          <div class="stat-card">
+            <div class="sc-label">逻辑总量</div>
+            <div class="sc-value">{{ fmtSize(stats.logical_bytes) }}</div>
+            <div class="sc-sub">{{ stats.versions }} 个版本 · {{ stats.documents }} 个文档</div>
+          </div>
+          <div class="stat-card">
+            <div class="sc-label">实际磁盘占用</div>
+            <div class="sc-value">{{ fmtSize(stats.actual_bytes) }}</div>
+            <div class="sc-sub">块级去重 + zstd 压缩后落盘</div>
+          </div>
+          <div class="stat-card accent">
+            <div class="sc-label">节省空间</div>
+            <div class="sc-value">{{ stats.saved_bytes ? fmtSize(stats.saved_bytes) : "-" }}</div>
+            <div class="sc-sub" v-if="stats.save_pct != null">较「按版本存整件」节省 {{ stats.save_pct }}%</div>
+            <div class="sc-sub" v-else>暂无数据</div>
+          </div>
+          <div class="stat-card">
+            <div class="sc-label">块去重率</div>
+            <div class="sc-value">{{ stats.dedup_pct != null ? stats.dedup_pct + "%" : "-" }}</div>
+            <div class="sc-sub">{{ stats.chunk_refs }} 个块引用 · {{ stats.unique_chunks }} 个唯一块</div>
+          </div>
+          <div class="stat-card" v-if="stats.compress_ratio">
+            <div class="sc-label">块存储压缩比</div>
+            <div class="sc-value">{{ stats.compress_ratio }}×</div>
+            <div class="sc-sub">解压域内容大小 ÷ 磁盘占用（zstd）</div>
+          </div>
+        </div>
+        <p class="muted" style="margin-top:12px" v-if="stats">{{ stats.note }}</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 文档详情弹窗 -->
+  <div class="modal-mask" v-if="cur && !editOnly">
+    <div class="modal">
+      <button class="modal-x" @click="cur=null" title="关闭">×</button>
+      <h3>{{ cur.name }}{{ cur.ext }} <span class="tag">v{{ cur.latest_seq }}</span>
+        <span class="tag" v-if="docPerm && docPerm.my.can_write">可编辑</span>
+        <span class="tag warn" v-else-if="docPerm && docPerm.my.source==='system'" title="系统管理员默认不可查看业务内容，可点下方按钮申请临时权限">需提权</span>
+        <span class="tag ro" v-else-if="docPerm && docPerm.my.can_manage">管理（只读内容）</span>
+        <span class="tag ro" v-else-if="docPerm">只读</span>
+      </h3>
+
+      <div class="toolbar doc-actions">
+        <button @click="previewDoc(cur)">👁 查看内容</button>
+        <button @click="downloadSmart(cur)" :title="`下载 ${cur.name}_v${cur.latest_seq}${cur.ext}（自动绑定编辑基线）`">⬇ 下载最新</button>
+        <button v-if="docPerm && docPerm.my.can_write" @click="commitClick" title="上传文件提交新版本；带基线标记的文件自动走离线比对">📤 提交新版本</button>
+        <input type="file" ref="commitInput" style="display:none" @change="doCommit">
+        <button v-if="docPerm && docPerm.my.can_write && ['.docx','.xlsx','.pptx'].includes(cur.ext)" class="primary" @click="openOO"
+          title="在编辑器里修改并保存后，自动提交新版本（来源：在线编辑）">🖥 在线编辑</button>
+        <button v-if="docPerm && docPerm.my.can_write && (cur.ext==='.md'||cur.ext==='.txt')" class="primary" @click="openTextEdit"
+          title="直接在页面上编辑文本，保存后自动提交新版本">✏ 编辑文本</button>
+        <button v-if="docPerm && docPerm.my.can_manage" @click="openPerm('document', cur.id, cur.name + cur.ext)"
+          title="设置谁能查看、谁可编辑、谁可管理该文档">🔑 权限</button>
+        <button v-if="docPerm && docPerm.my.source==='system' && !docPerm.my.elevated && docPerm.my.is_system_admin"
+          @click="elevateDoc('read')"
+          title="系统管理员默认不查看业务内容，可临时申请 2 小时查看权限（写入审计）">🔓 申请临时查看</button>
+        <button v-else-if="docPerm && !docPerm.my.can_write && docPerm.my.is_system_admin" @click="elevateDoc('write')"
+          title="临时获得 2 小时编辑权限（写入审计，到期自动收回）">🔓 申请临时编辑</button>
+      </div>
+
+      <div class="share-box" style="margin-top:14px">
+        <div class="toolbar">
+          <input v-model="sharePwd" placeholder="访问密码（可选）" style="width:160px" :disabled="!canShare">
+          <input v-model.number="shareHours" type="number" placeholder="有效小时数（空=永久）" style="width:200px" :disabled="!canShare">
+          <button @click="createShare" :disabled="!canShare"
+            :title="canShare ? '生成对外访问链接（需密码可自设）' : '只读用户不可对外分享：需要该文档的写权限或管理权限'">生成站外链接</button>
+          <span v-if="!canShare" class="muted" style="font-size:12px">🔒 只读用户不可对外分享</span>
+          <button v-if="shareUrl" class="share-chip" :class="{copied:copied}" @click="copyShare" :title="copied ? '已复制' : `点击复制：${shareUrl}`">
+            <span class="ic">{{ copied ? '✓' : '🔗' }}</span>
+            <span class="txt">{{ copied ? '已复制到剪贴板' : shareUrl }}</span>
+          </button>
+        </div>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:14px;margin:10px 0 0">
+        <h4 style="margin:0">版本历史（F-31）</h4>
+        <button class="sm" :disabled="selSeqs.length!==2" @click="openDiff"
+          :title="selSeqs.length===2 ? '对比所选两个版本' : '勾选两个版本后可对比'">⚖ 版本对比</button>
+      </div>
+      <div class="vh">
+      <table>
+        <thead><tr><th style="width:34px"></th><th>版本</th><th>说明</th><th>来源</th><th>变更摘要</th><th>提交人</th><th>时间</th><th>操作</th></tr></thead>
+        <tbody>
+          <tr v-for="v in versions" :key="v.id">
+            <td><input type="checkbox" class="vchk" :checked="isSel(v.seq)" @change="toggleSel(v.seq)"></td>
+            <td>
+              <a class="vlink" @click="previewVersion(v)" title="查看该版本内容">v{{ v.seq }}</a>
+              <div class="vtags" v-if="v.tags && v.tags.length">
+                <span class="tag" v-for="t in v.tags" :key="t">{{ t }}</span>
+              </div>
+            </td>
+            <td>{{ noteText(v) }}</td>
+            <td><span class="tag src">{{ srcLabel(v) }}</span></td>
+            <td class="muted">{{ fmtSummary(v.change_summary) }}</td>
+            <td>{{ v.creator_name }}</td>
+            <td>{{ fmtTime(v.created_at) }}</td>
+            <td>
+              <div class="rowbtns">
+                <button class="sm ibtn" @click="tagVersion(v)" title="打标签">🏷</button>
+                <button class="sm ibtn" @click="downloadVersion(v)" :title="`下载 v${v.seq}`">⬇</button>
+                <button class="sm ibtn" @click="rollback(v)" v-if="v.seq!==cur.latest_seq" title="回滚到此版本">⟲</button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      </div>
+    </div>
+  </div>
+
+    <!-- 目录权限弹窗 -->
+    <div class="modal-mask" v-if="fp" @click.self="fp=null">
+      <div class="modal" style="width:560px;min-height:auto;max-height:88vh">
+        <button class="modal-x" @click="fp=null" title="关闭">×</button>
+        <h3 style="margin:0;padding-right:44px">目录权限：{{ fp.folder.name }}</h3>
+
+        <label class="fp-switch">
+          <input type="checkbox" v-model="fp.folder.is_private" @change="toggleFolderPrivate">
+          <span>仅受邀成员可见（私有目录）</span>
+        </label>
+        <p class="muted" style="font-size:12.5px;margin:8px 0 0">
+          开启后，空间成员默认看不到该目录（含其下文档与搜索结果），需要在下方逐一邀请；关闭则恢复继承空间权限。
+        </p>
+        <div v-if="fp.folder.parent_id" class="toolbar" style="margin-top:10px">
+          <span class="muted" style="font-size:12.5px">当前是子目录</span>
+          <button class="sm" @click="moveFolderToRoot" title="把该目录移到空间根，与顶级目录同级">⇱ 移到空间根</button>
+        </div>
+
+        <h4 style="margin:18px 0 8px">已授权（{{ fp.entries.length }}）</h4>
+        <div v-if="!fp.entries.length" class="muted" style="font-size:13px">暂无受邀成员</div>
+        <div class="fp-item" v-for="e in fp.entries" :key="e.subject_type + '_' + e.subject_id">
+          <span class="fp-user">
+            <span class="fp-tag" v-if="e.subject_type==='group'">组</span>
+            {{ e.display_name || e.username }}
+            <span class="muted" v-if="e.subject_type==='group'" style="font-size:12px"> · 组内成员均生效</span>
+          </span>
+          <select class="fp-sel" v-model="e.content" @change="updateFolderPerm(e)">
+            <option value="read">只读</option>
+            <option value="write">可写</option>
+          </select>
+          <button class="sm ibtn danger" @click="removeFolderPerm(e)" title="移除该成员的访问权限">✕</button>
+        </div>
+
+        <h4 style="margin:18px 0 8px">邀请成员 / 授权用户组</h4>
+        <div class="toolbar" style="margin-bottom:0">
+          <select class="fp-sel" v-model="fpAddType" @change="fpAddUser=null; fpAddGroup=null" style="min-width:104px">
+            <option value="user">用户</option>
+            <option value="group">用户组</option>
+          </select>
+          <select class="fp-sel" v-if="fpAddType==='user'" v-model="fpAddUser" style="min-width:180px">
+            <option :value="null">选择用户…</option>
+            <option v-for="c in fp.candidates" :key="c.user_id" :value="c.user_id">
+              {{ c.display_name }}{{ c.in_space ? '' : '（非空间成员）' }}
+            </option>
+          </select>
+          <select class="fp-sel" v-else v-model="fpAddGroup" style="min-width:190px">
+            <option :value="null">选择用户组…</option>
+            <option v-for="g in fp.groups" :key="g.id" :value="g.id">
+              {{ '　'.repeat(g.depth) }}{{ g.name }}（{{ g.member_count }}人）
+            </option>
+          </select>
+          <select class="fp-sel" v-model="fpAddPerm">
+            <option value="read">只读</option>
+            <option value="write">可写</option>
+          </select>
+          <button class="primary" :disabled="fpAddType==='group' ? !fpAddGroup : !fpAddUser" @click="addFolderPerm">邀请</button>
+        </div>
+        <p class="muted" style="font-size:12px;margin-top:8px">
+          授权给用户组后，组内成员（含子组成员）都能按该权限访问本目录；后续人员调整只需改组，无需逐个改授权。
+        </p>
+      </div>
+    </div>
+
+    <!-- 版本标签弹窗：多标签 + 联想 + 可删 -->
+    <div class="modal-mask" v-if="tagDlg" @click.self="tagDlg=null">
+      <div class="modal" style="width:520px;min-height:auto">
+        <button class="modal-x" @click="tagDlg=null" title="关闭">×</button>
+        <h3 style="margin:0;padding-right:44px">版本标签：{{ tagDlg.docName }} <span class="tag">v{{ tagDlg.seq }}</span></h3>
+        <p class="muted" style="font-size:12.5px;margin:8px 0 0">
+          标签挂在“这个版本”上（类似 git tag），同名标签可以打在多个文档的多个版本上；可按标签检索到该版本。
+        </p>
+
+        <h4 style="margin:16px 0 8px">当前版本标签</h4>
+        <div v-if="!tagDlg.tags.length" class="muted" style="font-size:13px">暂无标签</div>
+        <div class="tagchips">
+          <span class="tchip" v-for="t in tagDlg.tags" :key="t">
+            {{ t }}<b @click="delVersionTag(t)" title="删除该标签">×</b>
+          </span>
+        </div>
+
+        <h4 style="margin:16px 0 8px">添加标签</h4>
+        <div class="toolbar" style="margin-bottom:0">
+          <input v-model="tagInput" @keyup.enter="addTags" @input="loadTagSuggestions(tagInput)"
+                 placeholder="如：对外发布, 评审稿（逗号分隔可一次加多个）" style="flex:1;min-width:240px">
+          <button class="primary" :disabled="!tagInput.trim()" @click="addTags">添加</button>
+        </div>
+        <div class="sugs" v-if="tagSugs.length">
+          <span class="sug" v-for="s in tagSugs" :key="s.name" @click="tagInput = s.name">
+            {{ s.name }}<i>{{ s.version_count }}</i>
+          </span>
+        </div>
+        <p class="muted" style="font-size:12px;margin-top:10px">
+          已有标签点击可直接填入；重复标签会自动忽略。删除标签仅限打标签本人或该文档管理员。
+        </p>
+      </div>
+    </div>
+
+    <!-- 通用权限面板：空间 / 文档（目录沿用目录权限弹窗） -->
+    <div class="modal-mask" v-if="perm" @click.self="perm=null">
+      <div class="modal" style="width:680px;min-height:auto;max-height:86vh">
+        <button class="modal-x" @click="perm=null" title="关闭">×</button>
+        <h3 style="margin:0;padding-right:44px">权限：{{ perm.title }}</h3>
+        <div class="muted" style="font-size:13px;margin-top:10px">
+          我的权限：
+          <b style="color:var(--tx)">{{ perm.my.can_write ? '可编辑内容' : (perm.my.can_read ? '只读内容' : '无') }}</b>
+          <span v-if="perm.my.is_admin"> · 管理员</span>
+          <span v-if="perm.my.source==='system'"> · 系统兜底</span>
+          <span v-if="perm.my.elevated"> · 临时提权</span>
+        </div>
+
+        <div v-if="!perm.my.can_manage" class="muted" style="font-size:13px;margin-top:14px">
+          你不是该对象的管理员，只能查看授权情况。
+        </div>
+
+        <template v-if="perm.my.can_manage">
+          <h4 style="margin:16px 0 8px">已授权（{{ perm.entries.length }}）</h4>
+          <div v-if="!perm.entries.length" class="muted" style="font-size:13px">暂无显式授权（继承上级或未授权）</div>
+          <div class="fp-item" v-for="e in perm.entries" :key="e.subject_type + '_' + e.subject_id">
+            <span class="fp-user">
+              <span class="fp-tag" v-if="e.subject_type==='group'">组</span>
+              {{ e.display_name || e.username }}<span class="muted" v-if="e.subject_type==='user'" style="font-size:12px"> @{{ e.username }}</span>
+              <span class="muted" v-else style="font-size:12px"> · 组内成员均生效</span>
+            </span>
+            <select class="fp-sel" v-model="e.content" @change="updatePerm(e)">
+              <option value="read">可读</option>
+              <option value="write">可写（含读）</option>
+              <option value="none" v-if="e.subject_type==='user'">无内容权限</option>
+            </select>
+            <label class="fp-chk" title="管理员只管成员，不含内容写权">
+              <input type="checkbox" v-model="e.is_admin" @change="updatePerm(e)"> 管理员
+            </label>
+            <button class="sm ibtn danger" @click="removePerm(e)" title="移除该授权">✕</button>
+          </div>
+
+          <h4 style="margin:18px 0 8px">添加授权</h4>
+          <div class="toolbar" style="margin-bottom:0">
+            <select class="fp-sel" v-model="permAddType" @change="permAddUser=null; permAddGroup=null"
+                    v-if="perm.node_type!=='space'" style="min-width:104px">
+              <option value="user">用户</option>
+              <option value="group">用户组</option>
+            </select>
+            <select class="fp-sel" v-if="permAddType==='user'" v-model="permAddUser" style="min-width:170px">
+              <option :value="null" disabled>选择用户</option>
+              <option v-for="c in perm.candidates" :key="c.user_id" :value="c.user_id">
+                {{ c.display_name || c.username }}（{{ c.username }}）
+              </option>
+            </select>
+            <select class="fp-sel" v-else v-model="permAddGroup" style="min-width:190px">
+              <option :value="null" disabled>选择用户组</option>
+              <option v-for="g in perm.groups" :key="g.id" :value="g.id">
+                {{ '　'.repeat(g.depth) }}{{ g.name }}（{{ g.member_count }}人）
+              </option>
+            </select>
+            <select class="fp-sel" v-model="permAddContent">
+              <option value="read">可读</option>
+              <option value="write">可写</option>
+            </select>
+            <label class="fp-chk"><input type="checkbox" v-model="permAddAdmin"> 管理员</label>
+            <input v-model.number="permAddHours" type="number" min="1" placeholder="临时(小时)" style="width:112px">
+            <button class="primary" :disabled="permAddType==='group' ? !permAddGroup : !permAddUser" @click="addPerm">授权</button>
+          </div>
+          <div class="muted" style="font-size:12px;margin-top:9px">
+            授「写」自动包含读；管理员只负责邀请/移除成员，不含内容写权；临时授权到期自动失效。
+            <span v-if="perm.node_type!=='space'">授权给用户组后，组内成员（含子组成员）都按该权限生效，人员变动无需逐个改授权。</span>
+          </div>
+        </template>
+      </div>
+    </div>
+
+    <!-- 版本对比弹窗 -->
+    <div class="modal-mask" v-if="diffModal" @click.self="diffModal=null">
+      <div class="modal" style="width:1040px;min-height:auto;max-height:90vh">
+        <button class="modal-x" @click="diffModal=null" title="关闭">×</button>
+        <h3 style="margin:0;padding-right:44px">版本对比：v{{ diffOld }} → v{{ diffNew }}</h3>
+        <div class="df-stats" v-if="diffResult">
+          <span class="df-stat ins">+{{ diffResult.summary.added }} 字</span>
+          <span class="df-stat del">−{{ diffResult.summary.removed }} 字</span>
+          <span class="df-stat neutral">{{ diffResult.summary.changed_units }} 处{{ diffResult.summary.unit }}变更</span>
+        </div>
+        <div class="dh-body">
+          <div v-if="diffResult && !diffChanged.length" class="muted" style="padding:20px 0">两个版本内容一致，无差异。</div>
+          <div class="df-legend" v-if="diffChanged.length">
+            <span><i class="lg-del"></i>旧版本中被删除/替换的内容</span>
+            <span><i class="lg-ins"></i>新版本中新增的内容</span>
+          </div>
+          <div v-for="(s,i) in diffChanged" :key="i" class="df-card" :class="'df-'+s.op">
+            <div class="df-head">
+              <span class="df-badge">{{ s.op==='insert' ? '新增' : (s.op==='delete' ? '删除' : '修改') }}</span>
+              <span class="df-label" v-if="s.label">{{ s.label }}</span>
+            </div>
+            <div class="df-row old" v-for="(l,j) in s.old" :key="'o'+i+j">
+              <span class="df-sign">−</span>
+              <span class="df-text"><template v-if="s.old_runs && s.old_runs[j]"><span v-for="(r,k) in s.old_runs[j]" :key="k" :class="'df-'+r.t">{{ r.s }}</span></template><template v-else>{{ l }}</template></span>
+            </div>
+            <div class="df-row new" v-for="(l,j) in s.new" :key="'n'+i+j">
+              <span class="df-sign">+</span>
+              <span class="df-text"><template v-if="s.new_runs && s.new_runs[j]"><span v-for="(r,k) in s.new_runs[j]" :key="k" :class="'df-'+r.t">{{ r.s }}</span></template><template v-else>{{ l }}</template></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- OnlyOffice 在线编辑器全屏覆盖层 -->
+    <div v-if="ooActive" style="position:fixed;inset:0;background:#fff;z-index:120;display:flex;flex-direction:column">
+      <div style="padding:9px 16px;display:flex;align-items:center;gap:12px;border-bottom:1px solid #e5e7eb;background:#f8fafc">
+        <b style="font-size:14px">🖥 在线编辑：{{ cur && cur.name }}{{ cur && cur.ext }}</b>
+        <span class="muted" style="font-size:12px">{{ ooDirty ? "有未保存的改动" : "内容未修改" }} · 「保存并关闭」= 有改动则存为新版本；「放弃改动」= 丢弃本次修改</span>
+        <span style="flex:1"></span>
+        <button class="danger" @click="discardOO" title="丢弃本次编辑并关闭，不产生新版本">✕ 放弃改动</button>
+        <button class="primary" @click="closeOO" title="保存当前修改为新版本并关闭编辑器">💾 保存并关闭</button>
+      </div>
+      <div id="oo-editor" style="flex:1"></div>
+    </div>
+
+    <!-- md/txt 文本编辑覆盖层：左编辑 / 右实时预览，可拖拽分栏、可各自全屏 -->
+    <div v-if="textActive" style="position:fixed;inset:0;background:#fff;z-index:120;display:flex;flex-direction:column">
+      <div class="ed-head">
+        <b style="font-size:14px">✏ 编辑：{{ cur && cur.name }}{{ cur && cur.ext }}</b>
+        <span class="muted" style="font-size:12px">
+          {{ editDirty ? "有未保存的改动" : "内容未修改" }} · 保存后自动提交新版本（说明记为「在线编辑」）
+        </span>
+        <span style="flex:1"></span>
+        <button class="danger" @click="discardText" title="丢弃本次所有改动并关闭，不产生新版本">✕ 放弃改动</button>
+        <button class="primary" @click="saveText" title="保存当前修改为新版本并关闭编辑器">💾 保存并关闭</button>
+      </div>
+
+      <!-- md：左右分栏（可拖拽、可各自全屏）；txt 无语义格式，保持单栏 -->
+      <div class="ed-split" :class="'ed-mode-' + editMode" v-if="cur && cur.ext === '.md'">
+        <div class="ed-pane" v-if="editMode !== 'right'"
+             :style="editMode === 'split' ? { width: splitPct + '%', flex: '0 0 ' + splitPct + '%' } : {}">
+          <div class="ed-pane-head">
+            <span>Markdown 编辑</span>
+            <button class="sm ibtn" @click="togglePane('left')"
+              :title="editMode === 'left' ? '退出全屏' : '编辑区全屏'">{{ editMode === 'left' ? '⤡' : '⛶' }}</button>
+          </div>
+          <textarea v-model="editText" @input="onEditInput" @scroll="syncPreviewScroll" ref="editArea"
+            class="ed-textarea" placeholder="在此输入 Markdown……"></textarea>
+        </div>
+
+        <div class="ed-divider" v-if="editMode === 'split'" @mousedown="startDrag" title="拖动调整左右宽度"></div>
+
+        <div class="ed-pane" v-if="editMode !== 'left'">
+          <div class="ed-pane-head">
+            <span>实时预览</span>
+            <button class="sm ibtn" @click="togglePane('right')"
+              :title="editMode === 'right' ? '退出全屏' : '预览区全屏'">{{ editMode === 'right' ? '⤡' : '⛶' }}</button>
+          </div>
+          <div class="ed-preview pv-body" ref="previewArea" @scroll="syncEditorScroll"
+            v-html="previewHtml || '<p class=muted>（预览将在这里实时显示）</p>'"></div>
+        </div>
+      </div>
+
+      <textarea v-else v-model="editText" @input="onEditInput" class="ed-textarea"
+        style="flex:1"></textarea>
+    </div>
+
+    <!-- 内容预览弹窗：#app 直接子级，任何视图可渲染 -->
+    <div class="modal-mask" v-if="pv" @click.self="closePreview">
+      <div class="modal pv-modal">
+        <button class="modal-x" @click="closePreview" title="关闭">×</button>
+        <div class="pv-head">
+          <b>{{ pv.name }}{{ pv.ext }} <span class="tag">v{{ pv.seq }}</span></b>
+          <button v-if="pv.kind==='pdf'" class="sm" style="margin-left:auto"
+            @click="openPvNewTab" title="在新窗口打开（可缩放、打印）">⤢ 新窗口</button>
+        </div>
+        <div class="pv-wm">仅限 {{ user ? (user.display_name || user.username) : '' }} 查看 · {{ pv._wm }} · 内部资料，请勿外传</div>
+        <div class="pv-body" v-if="pv.loading">
+          <div class="pv-loading"><span class="spin"></span> 正在渲染文档预览…</div>
+        </div>
+        <div class="pv-doc" v-else-if="pv.kind==='html'">
+          <div class="pv-body"><div v-html="pv.content"></div></div>
+          <div class="pv-wm-layer" aria-hidden="true">
+            <span v-for="i in 18" :key="i">{{ pv._wmText }}</span>
+          </div>
+        </div>
+        <div class="pv-doc" v-else-if="pv.kind==='pdf'">
+          <iframe :src="pv.url" class="pv-frame" title="文档预览" allow="fullscreen" allowfullscreen></iframe>
+          <div class="pv-wm-layer" aria-hidden="true">
+            <span v-for="i in 18" :key="i">{{ pv._wmText }}</span>
+          </div>
+        </div>
+        <div class="pv-doc" v-else-if="pv.kind==='image'">
+          <div class="pv-img-wrap"><img :src="pv.url" class="pv-img" :alt="pv.name"></div>
+          <div class="pv-wm-layer" aria-hidden="true">
+            <span v-for="i in 18" :key="i">{{ pv._wmText }}</span>
+          </div>
+        </div>
+        <div class="pv-doc" v-else>
+          <div class="pv-body"><pre>{{ pv.content }}</pre></div>
+          <div class="pv-wm-layer" aria-hidden="true">
+            <span v-for="i in 18" :key="i">{{ pv._wmText }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 页面内输入/确认弹窗：必须是 #app 直接子级，任何视图下都能渲染 -->
+    <div class="dlg-mask" v-if="dlg" @click.self="dlgCancel">
+      <div class="dlg">
+        <div class="dlg-title">{{ dlg.title }}</div>
+        <input v-if="dlg.input" v-model="dlg.value" :placeholder="dlg.placeholder || ''" @keyup.enter="dlgOk" style="width:100%;box-sizing:border-box;margin-top:10px">
+        <div class="dlg-actions">
+          <button @click="dlgCancel">取消</button>
+          <button class="primary" @click="dlgOk">确定</button>
+        </div>
+      </div>
+    </div>
+</div>
+
+<script>
+const { createApp, ref, reactive, computed, nextTick } = Vue;
+const API = "";
+function api(path, opts = {}) {
+  const t = localStorage.getItem("dv_token") || "";
+  opts.headers = Object.assign({ Authorization: "Bearer " + t }, opts.headers || {});
+  if (opts.body instanceof FormData) delete opts.headers["Content-Type"];
+  return fetch(API + path, opts).then(async r => {
+    if (r.status === 401 && t && !opts.noAuth401) {   // 已有登录会话时的 401 = 令牌过期/失效：统一清理并回到登录页
+      authLost();
+      throw new Error("登录已过期，请重新登录");
+    }
+    // 其余 401（登录/注册被拒、无令牌的匿名请求等）：按普通错误透传后端提示（如「用户名或密码错误」）
+    if (!r.ok) {
+      let msg = "请求失败 " + r.status;
+      try {
+        const d = (await r.json()).detail;
+        if (typeof d === "string") msg = d;
+        else if (Array.isArray(d))   // FastAPI 422 校验错误：detail 是数组
+          msg = d.map(x => (x.loc || []).join(".") + ": " + x.msg).join("; ") || msg;
+      } catch (e) {}
+      throw new Error(msg);
+    }
+    return r.json();
+  });
+}
+
+// 登录态失效的统一处理：清本地令牌 + 通知界面切回登录页（只触发一次）
+let _authLostHandler = null;
+function authLost() {
+  localStorage.removeItem("dv_token");
+  if (_authLostHandler) _authLostHandler();
+  else location.reload();
+}
+createApp({
+  setup() {
+    const buildTag = "2026-11-24.43";
+    console.log("[DocVault] build", buildTag);
+    const token = ref(localStorage.getItem("dv_token") || "");
+    const staleBuild = ref(false);
+    const reloadPage = () => location.reload();
+    const user = ref(null);
+    const toast = ref("");
+    const say = m => { toast.value = m; setTimeout(() => toast.value = "", 3200); };
+    // 任何接口返回 401（令牌过期/被清）→ 立即回到登录页，并说明原因
+    _authLostHandler = () => {
+      const wasLoggedIn = !!token.value;
+      token.value = "";
+      user.value = null;
+      if (wasLoggedIn) say("登录已过期，请重新登录");
+    };
+
+    // ---- 页面内对话框（替代原生 prompt/confirm） ----
+    // ask 返回输入字符串（取消为 null）；confirmBox 返回 true/false
+    const dlg = ref(null);
+    function ask(title, def = "", placeholder = "") {
+      return new Promise(res => { dlg.value = { title, value: def, input: true, placeholder, resolve: res }; });
+    }
+    function confirmBox(title) {
+      return new Promise(res => { dlg.value = { title, value: "", input: false, resolve: res }; });
+    }
+    function dlgOk() { const d = dlg.value; dlg.value = null; d.resolve(d.input ? d.value : true); }
+    function dlgCancel() { const d = dlg.value; dlg.value = null; d.resolve(d.input ? null : false); }
+    const auth = reactive({ mode: "login", username: "", password: "", displayName: "" });
+
+    const spaces = ref([]), spaceId = ref(null), folders = ref([]), folderId = ref(null);
+    const navFocus = ref("root");   // 侧边栏当前焦点：root 文档库 / space 空间 / folder 目录（互斥高亮）
+    const docs = ref([]), exts = [".docx", ".xlsx", ".pptx", ".pdf", ".doc", ".ppt", ".txt", ".md"];
+    const searchQ = ref(""), filterExt = ref(""), searchTag = ref("");
+    const searchScope = ref("all");   // all = 跨全部可读空间；space = 仅当前空间
+    const cur = ref(null), versions = ref([]);
+    // 从列表「编辑」直接进入编辑器时为 true：不渲染详情弹窗，关闭编辑器后直接回列表
+    const editOnly = ref(false);
+    const diffOld = ref(null), diffNew = ref(null), diffResult = ref(null);
+    const view = ref("docs"), auditLogs = ref([]), stats = ref(null);
+    // ---- 用户组 ----
+    const groups = ref([]), groupSel = ref(null), groupDetail = ref(null);
+    const groupAddUser = ref(null), groupUsers = ref([]);
+    const sharePwd = ref(""), shareHours = ref(null), shareUrl = ref("");
+    const copied = ref(false);
+    let copyTimer = null;
+    const fileInput = ref(null), commitInput = ref(null);
+    let offlineTmpFile = null, offlineTaskToken = null;
+
+    const fmtSize = n => !n ? "-" : n < 1024 * 1024 ? (n / 1024).toFixed(1) + " KB"
+      : n < 1073741824 ? (n / 1048576).toFixed(1) + " MB" : (n / 1073741824).toFixed(2) + " GB";
+    // 库里存的是 UTC（naive），展示时统一按本地时区格式化，避免出现"少 8 小时"
+    const fmtTime = t => {
+      if (!t) return "";
+      const s = String(t);
+      const iso = /(Z|[+-]\d{2}:?\d{2})$/.test(s) ? s : s.replace(" ", "T") + "Z";
+      const d = new Date(iso);
+      if (isNaN(d.getTime())) return s.replace("T", " ").slice(0, 19);
+      const p = n => String(n).padStart(2, "0");
+      return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} `
+        + `${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+    };
+    const srcLabel = v => ({ upload: "上传", edit: "在线编辑", rollback: "回滚", offline_upload: "离线回传", restore: "恢复", create: "在线新建", edit_online: "页面编辑" }[v.source] || v.source) + (v.source_ref ? "·" + v.source_ref : "");
+    const fmtSummary = s => {
+      if (!s) return "-";
+      const base = `+${s.added_chars}/-${s.removed_chars} 字 · ${s.changed_units} 个${s.unit}`;
+      // 文字无变化但结构/样式有差异（加粗、标题、缩进等），显式标注
+      const styleOnly = s.style_changed || (!s.added_chars && !s.removed_chars && !s.changed_units);
+      return styleOnly ? `${base} · 样式变动` : base;
+    };
+    // 历史版本说明里带编辑器名后缀，展示时统一简化
+    const noteText = v => (v.note || "").replace(/（OnlyOffice）|\(OnlyOffice\)/g, "");
+
+    // ---- 统一权限面板（空间 / 文档；目录用专用弹窗）----
+    const perm = ref(null), docPerm = ref(null);
+    const permAddUser = ref(null), permAddContent = ref("read");
+    const permAddAdmin = ref(false), permAddHours = ref(null);
+    const permAddType = ref("user"), permAddGroup = ref(null);
+    async function openPerm(type, id, title) {
+      try {
+        const r = await api(`/api/perms/${type}/${id}`);
+        perm.value = { ...r, title: title || "" };
+        permAddUser.value = null; permAddContent.value = "read";
+        permAddAdmin.value = false; permAddHours.value = null;
+        permAddType.value = "user"; permAddGroup.value = null;
+      } catch (e) { say(e.message); }
+    }
+    async function reloadPerm() {
+      if (!perm.value) return;
+      const { node_type, node_id, title } = perm.value;
+      perm.value = { ...(await api(`/api/perms/${node_type}/${node_id}`)), title };
+    }
+    async function addPerm() {
+      if (!perm.value) return;
+      const isGroup = permAddType.value === "group";
+      const subjectId = isGroup ? permAddGroup.value : permAddUser.value;
+      if (!subjectId) return;
+      try {
+        await api(`/api/perms/${perm.value.node_type}/${perm.value.node_id}`, {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            subject_type: isGroup ? "group" : "user", subject_id: subjectId,
+            content: permAddContent.value,
+            is_admin: permAddAdmin.value || null,
+            hours: permAddHours.value || null,
+          }),
+        });
+        say(isGroup ? "已授权给用户组" : "授权已保存");
+        permAddUser.value = null; permAddGroup.value = null;
+        permAddHours.value = null; permAddAdmin.value = false;
+        await reloadPerm();
+        if (perm.value && perm.value.node_type === "document") await loadDocPerm(perm.value.node_id);
+      } catch (e) { say(e.message); }
+    }
+    async function updatePerm(e) {
+      try {
+        await api(`/api/perms/${perm.value.node_type}/${perm.value.node_id}`, {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ subject_type: e.subject_type, subject_id: e.subject_id,
+                                 content: e.content, is_admin: !!e.is_admin }),
+        });
+        say("权限已更新");
+      } catch (err) { say(err.message); await reloadPerm(); }
+    }
+    async function removePerm(e) {
+      if (!await confirmBox(`移除「${e.display_name || e.username}」在该对象上的授权？`)) return;
+      try {
+        await api(`/api/perms/${perm.value.node_type}/${perm.value.node_id}/${e.subject_type}/${e.subject_id}`, { method: "DELETE" });
+        say("已移除");
+        await reloadPerm();
+        if (perm.value && perm.value.node_type === "document") await loadDocPerm(perm.value.node_id);
+      } catch (err) { say(err.message); }
+    }
+    async function loadDocPerm(docId) {
+      try { docPerm.value = await api(`/api/perms/document/${docId}`); }
+      catch (e) { docPerm.value = null; }
+    }
+    async function elevateDoc(content = "read") {
+      if (!cur.value) return;
+      const label = content === "write" ? "编辑" : "查看";
+      if (!await confirmBox(`申请「${cur.value.name}${cur.value.ext}」的临时${label}权限？\n\n2 小时后自动失效，本次提权会写入审计日志。`)) return;
+      try {
+        await api(`/api/admin/elevate/${cur.value.id}?hours=2&content=${content}`, { method: "POST" });
+        await loadDocPerm(cur.value.id);
+        say(`已获得 2 小时临时${label}权限`);
+      } catch (e) { say(e.message); }
+    }
+
+    // ---- 侧边栏导航状态持久化（刷新后回到上次位置）----
+    const NAV_KEY = "docvault.nav.v1";
+    function saveNav() {
+      try {
+        localStorage.setItem(NAV_KEY, JSON.stringify({
+          spaceId: spaceId.value, folderId: folderId.value,
+          view: view.value, navFocus: navFocus.value,
+        }));
+      } catch (e) { /* 隐私模式下忽略 */ }
+    }
+    function readNav() {
+      try { return JSON.parse(localStorage.getItem(NAV_KEY) || "{}") || {}; } catch (e) { return {}; }
+    }
+    // 版本哨兵：服务端 build 与页面 build 不一致时提示刷新（避免长期开着的标签页跑旧界面）
+    async function checkBuild() {
+      try {
+        const h = await fetch(API + "/api/health").then(r => r.json());
+        if (h && h.build && h.build !== buildTag) staleBuild.value = true;
+      } catch (e) { /* 网络抖动忽略 */ }
+    }
+
+    async function boot() {
+      if (!token.value) return;
+      try {
+        user.value = await api("/api/auth/me");
+      } catch (e) {
+        return;      // 令牌失效：api() 已清掉本地令牌并切回登录页
+      }
+      checkBuild();
+      setInterval(checkBuild, 5 * 60 * 1000);   // 标签页长期开着时提示有新版本
+      const sp = await api("/api/spaces");
+      spaces.value = sp;
+      if (!sp.length) return;
+      const saved = readNav();
+      window.addEventListener("resize", () => syncTrunkX());
+      refreshTagOptions();                // 供工具栏标签筛选使用
+      spaceId.value = (saved.spaceId && sp.some(s => s.id === saved.spaceId)) ? saved.spaceId : sp[0].id;
+      await loadAll();                     // 载入该空间的目录（内部会清空 folderId）
+      if (saved.folderId && folders.value.some(f => f.id === saved.folderId)) {
+        folderId.value = saved.folderId;
+      }
+      if (saved.navFocus === "folder" && folderId.value) navFocus.value = "folder";
+      else if (saved.navFocus === "space") navFocus.value = "space";
+      else navFocus.value = "root";
+      view.value = ["docs", "trash", "audit", "stats", "groups", "tags"].includes(saved.view) ? saved.view : "docs";
+      if (["audit", "stats", "groups"].includes(view.value) && (!user.value || user.value.role !== "admin")) {
+        view.value = "docs";     // 换账号后无权限的视图回落到文档库
+      }
+      if (view.value === "docs") await loadDocs();
+      else if (view.value === "trash") await openTrash();
+      else if (view.value === "audit") await loadAudit();
+      else if (view.value === "stats") await loadStats();
+      else if (view.value === "groups") await loadGroups();
+      else if (view.value === "tags") await loadTagView();
+      saveNav();
+    }
+    async function loadAll() {
+      folders.value = await api(`/api/spaces/${spaceId.value}/folders`);
+      folderId.value = null;
+      await loadDocs();
+      await nextTick(); syncTrunkX();
+    }
+    async function loadDocs() {
+      const q = new URLSearchParams({ space_id: spaceId.value });
+      if (folderId.value) q.set("folder_id", folderId.value);
+      docs.value = await api(`/api/documents?${q}`);
+    }
+    // ---- 搜索框里的 # 标签联想：边打边筛，↑↓ 选择，回车填入 ----
+    const tagSuggest = ref([]), tagSugIdx = ref(0), tagSugOpen = ref(false), tagFrag = ref("");
+    function onSearchInput(e) {
+      const el = e.target;
+      const caret = el.selectionStart == null ? el.value.length : el.selectionStart;
+      const before = el.value.slice(0, caret);
+      const m = before.match(/(?:^|\s)#([^\s#]*)$/);
+      if (!m) { tagSugOpen.value = false; tagSuggest.value = []; return; }
+      tagFrag.value = m[1];
+      const kw = m[1].toLowerCase();
+      tagSuggest.value = (tagOptions.value || [])
+        .filter(t => !kw || t.name.toLowerCase().includes(kw))
+        .slice(0, 8);
+      tagSugIdx.value = 0;
+      tagSugOpen.value = true;
+    }
+    function onSearchFocus() {
+      if (!tagOptions.value.length) refreshTagOptions();
+    }
+    function hideTagSug() {
+      // 延迟收起，避免点选时先失焦导致选不中
+      setTimeout(() => { tagSugOpen.value = false; }, 120);
+    }
+    function moveTagSug(step) {
+      if (!tagSugOpen.value || !tagSuggest.value.length) return;
+      const n = tagSuggest.value.length;
+      tagSugIdx.value = (tagSugIdx.value + step + n) % n;
+    }
+    function applyTagSug(name) {
+      const v = searchQ.value || "";
+      searchQ.value = /(^|\s)#([^\s#]*)\s*$/.test(v)
+        ? v.replace(/(^|\s)#([^\s#]*)\s*$/, (_m, pre) => `${pre}#${name} `)
+        : `${v} #${name} `;
+      tagSugOpen.value = false;
+      tagSuggest.value = [];
+      nextTick(() => doSearch());
+    }
+    function onSearchEnter() {
+      if (tagSugOpen.value && tagSuggest.value.length) { applyTagSug(tagSuggest.value[tagSugIdx.value].name); return; }
+      doSearch();
+    }
+
+    async function doSearch() {
+      let kw = (searchQ.value || "").trim();
+      let tag = (searchTag.value || "").trim();
+      // 搜索框支持 #标签 / tag:标签 语法（与下拉筛选等价）
+      const m = kw.match(/(?:^|\s)(?:#|tag:)([^\s]+)/);
+      if (m) { tag = m[1]; kw = kw.replace(m[0], " ").trim(); }
+      if (!kw && !tag) { await loadDocs(); say("已清空检索条件，显示当前目录文档"); return; }
+      const q = new URLSearchParams({ q: kw });
+      const scoped = searchScope.value === "space";
+      if (scoped) q.set("space_id", spaceId.value);
+      if (filterExt.value) q.set("ext", filterExt.value);
+      if (tag) q.set("tag", tag);
+      docs.value = await api(`/api/documents/search?${q}`);
+      const scopeLabel = scoped ? "当前空间" : "全部空间";
+      const tagLabel = tag ? `，标签「${tag}」` : "";
+      say(docs.value.length
+        ? `检索完成：${docs.value.length} 条命中（范围：${scopeLabel}${tagLabel}，不含回收站）`
+        : `未找到「${kw || tag}」——已检索${scopeLabel}${tagLabel}；可切到「全部空间」再试`);
+    }
+    // 切换格式筛选：处于检索态时按新格式重新检索，否则回到目录列表
+    async function onExtChange() {
+      if ((searchQ.value || "").trim()) await doSearch();
+      else await loadDocs();
+    }
+    async function onScopeChange() {
+      if ((searchQ.value || "").trim()) await doSearch();
+    }
+    async function doAuth() {
+      try {
+        if (auth.mode === "register") {
+          await api("/api/auth/register", { noAuth401: true, method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username: auth.username, password: auth.password, display_name: auth.displayName }) });
+          say("注册成功，自动登录");
+        }
+        const r = await api("/api/auth/login", { noAuth401: true, method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username: auth.username, password: auth.password }) });
+        token.value = r.token; user.value = r.user;
+        localStorage.setItem("dv_token", r.token);
+        await boot();
+      } catch (e) { say(e.message); }
+    }
+    function logout() { token.value = ""; user.value = null; localStorage.removeItem("dv_token"); }
+
+    // ---- 左侧导航：空间/目录切换（联动右侧列表） ----
+    async function switchSpace(id) { spaceId.value = id; folderId.value = null; navFocus.value = "space"; view.value = "docs"; await loadAll(); saveNav(); }
+    async function pickFolder(id) {
+      const f = folders.value.find(x => x.id === id);
+      if (f && f.can_read === false) {
+        say(`无权限访问「${f.name}」：该目录未授权给你，可联系目录管理员申请`);
+        return;
+      }
+      folderId.value = id; navFocus.value = "folder"; view.value = "docs";
+      await loadDocs(); saveNav();
+    }
+    async function pickRoot() { folderId.value = null; navFocus.value = "root"; view.value = "docs"; await loadDocs(); saveNav(); }
+
+    async function newSpace() {
+      const name = await ask("请输入空间名称：");
+      if (!name) return;
+      await api("/api/spaces", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name }) });
+      spaces.value = await api("/api/spaces");
+      spaceId.value = spaces.value[spaces.value.length - 1].id;
+      folderId.value = null; navFocus.value = "space";
+      await loadAll(); saveNav();
+    }
+    async function renameSpace(s) {
+      const name = await ask(`重命名空间（原名：${s.name}）：`);
+      if (!name || !name.trim() || name.trim() === s.name) return;
+      try {
+        await api(`/api/spaces/${s.id}`, {
+          method: "PATCH", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: name.trim() }),
+        });
+        spaces.value = await api("/api/spaces");
+        say(`空间已重命名为「${name.trim()}」`);
+      } catch (e) { say(e.message); }
+    }
+    async function renameFolder(f) {
+      const name = await ask(`重命名目录（原名：${f.name}）：`);
+      if (!name || !name.trim() || name.trim() === f.name) return;
+      try {
+        await api(`/api/folders/${f.id}`, {
+          method: "PATCH", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: name.trim() }),
+        });
+        folders.value = await api(`/api/spaces/${spaceId.value}/folders`);
+        say(`目录已重命名为「${name.trim()}」`);
+      } catch (e) { say(e.message); }
+    }
+    async function deleteSpace(s) {
+      if (!await confirmBox(`删除空间「${s.name}」？\n\n空间内的文档需先删除（含回收站），删除空间后不可恢复。`)) return;
+      try {
+        await api(`/api/spaces/${s.id}`, { method: "DELETE" });
+        say(`空间「${s.name}」已删除`);
+        spaces.value = await api("/api/spaces");
+        if (spaceId.value === s.id) {
+          spaceId.value = spaces.value.length ? spaces.value[0].id : null;
+          folderId.value = null; navFocus.value = "root";
+          await loadAll();
+        }
+        saveNav();
+      } catch (e) { say(e.message); }
+    }
+    // ---- 目录级权限（私有目录 + 邀请授权，支持用户组）----
+    const fp = ref(null), fpAddUser = ref(null), fpAddPerm = ref("read");
+    const fpAddType = ref("user"), fpAddGroup = ref(null);
+    async function mergeFolderPerm(folderId) {
+      const acl = await api(`/api/folders/${folderId}/acl`);
+      const pm = await api(`/api/perms/folder/${folderId}`);
+      // 保留 acl 里的「是否空间成员」标记，用于邀请下拉的提示
+      const inSpace = new Map((acl.candidates || []).map(c => [c.user_id, c.in_space]));
+      const candidates = (pm.candidates || []).map(c => ({
+        ...c, in_space: inSpace.has(c.user_id) ? inSpace.get(c.user_id) : false,
+      }));
+      return { ...acl, entries: pm.entries, groups: pm.groups, candidates, my: pm.my };
+    }
+    async function refreshFolders() {
+      if (spaceId.value) folders.value = await api(`/api/spaces/${spaceId.value}/folders`);
+    }
+    async function openFolderPerm(f) {
+      try {
+        fp.value = await mergeFolderPerm(f.id);
+        fpAddUser.value = null; fpAddPerm.value = "read";
+        fpAddType.value = "user"; fpAddGroup.value = null;
+      } catch (e) { say(e.message); }
+    }
+    async function reloadFolderPerm() {
+      if (!fp.value) return;
+      fp.value = await mergeFolderPerm(fp.value.folder.id);
+    }
+    async function moveFolderToRoot() {
+      const f = fp.value.folder;
+      if (!await confirmBox(`把「${f.name}」移到空间根？\n\n移动后它与顶级目录同级，权限按新位置重新继承（自身显式授权保留）。`)) return;
+      try {
+        await api(`/api/folders/${f.id}`, {
+          method: "PATCH", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ move_to_root: true }),
+        });
+        say("已移到空间根");
+        fp.value = null;
+        folders.value = await api(`/api/spaces/${spaceId.value}/folders`);
+      } catch (e) { say(e.message); }
+    }
+    async function toggleFolderPrivate() {
+      const f = fp.value.folder;
+      try {
+        await api(`/api/folders/${f.id}`, {
+          method: "PATCH", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ is_private: f.is_private }),
+        });
+        say(f.is_private ? "已设为私有：仅受邀成员可见" : "已恢复公开：继承空间权限");
+        await reloadFolderPerm();
+        await refreshFolders();
+      } catch (e) { say(e.message); }
+    }
+    async function addFolderPerm() {
+      const isGroup = fpAddType.value === "group";
+      const subjectId = isGroup ? fpAddGroup.value : fpAddUser.value;
+      if (!subjectId) return;
+      try {
+        await api(`/api/perms/folder/${fp.value.folder.id}`, {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ subject_type: isGroup ? "group" : "user",
+                                 subject_id: subjectId, content: fpAddPerm.value }),
+        });
+        say(isGroup ? "已授权给用户组" : `已邀请（${fpAddPerm.value === "read" ? "只读" : "可写"}）`);
+        fpAddUser.value = null; fpAddGroup.value = null;
+        await reloadFolderPerm();
+        await refreshFolders();
+      } catch (e) { say(e.message); }
+    }
+    async function updateFolderPerm(e) {
+      try {
+        await api(`/api/perms/folder/${fp.value.folder.id}`, {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ subject_type: e.subject_type, subject_id: e.subject_id,
+                                 content: e.content }),
+        });
+        say("权限已更新");
+        await refreshFolders();
+      } catch (err) { say(err.message); await reloadFolderPerm(); }
+    }
+    async function removeFolderPerm(e) {
+      if (!await confirmBox(`移除「${e.display_name || e.username}」对该目录的访问权限？`)) return;
+      try {
+        await api(`/api/perms/folder/${fp.value.folder.id}/${e.subject_type}/${e.subject_id}`, { method: "DELETE" });
+        say("已移除");
+        await reloadFolderPerm();
+        await refreshFolders();
+      } catch (err) { say(err.message); }
+    }
+
+    // 目录按父子层级展开（深度优先），depth 用于缩进，避免"看起来同级、实际是子目录"
+    // 空间行：与「文档库」共用一条主干（根节点图标中线 x=20），
+    // 每个空间用肘部拐进来；最后一个空间不再向下延伸，避免悬空线头
+    const spaceRows = computed(() => {
+      const list = spaces.value;
+      return list.map((s, i) => {
+        const segs = [
+          { left: "20px", top: "0", w: 1, h: "50%" },
+          { left: "20px", top: "50%", w: 14, h: "1px" },
+        ];
+        if (i < list.length - 1) segs.push({ left: "20px", top: "50%", w: 1, h: "50%" });
+        return { ...s, segs };
+      });
+    });
+
+    const folderRows = computed(() => {
+      // 当前空间后面还有别的空间时，空间主干要穿过这一整块目录行
+      const curIdx = spaces.value.findIndex(s => s.id === spaceId.value);
+      const spaceHasNext = curIdx >= 0 && curIdx < spaces.value.length - 1;
+      const byParent = new Map();
+      folders.value.forEach(f => {
+        const k = f.parent_id || 0;
+        if (!byParent.has(k)) byParent.set(k, []);
+        byParent.get(k).push(f);
+      });
+      const rows = [];
+      const seen = new Set();
+      const walk = (pid, depth) => {
+        (byParent.get(pid) || []).forEach(f => {
+          if (seen.has(f.id)) return;
+          seen.add(f.id);
+          rows.push({ ...f, depth });
+          walk(f.id, depth + 1);
+        });
+      };
+      walk(0, 0);
+      folders.value.forEach(f => { if (!seen.has(f.id)) rows.push({ ...f, depth: 0 }); });
+
+      // 计算每行的引导线（seg）：竖线只在「还有同层后继」或「有子节点」时向下延伸，
+      // 横线只在有父节点时画出肘部——这样不会再出现悬空线头或断层
+      const rowHasNext = i => {
+        const d = rows[i].depth;
+        for (let j = i + 1; j < rows.length; j++) {
+          if (rows[j].depth === d) return true;
+          if (rows[j].depth < d) return false;
+        }
+        return false;
+      };
+      const stack = [];               // stack[k] = 第 k 层当前节点所在的行下标
+      rows.forEach((r, i) => {
+        const d = r.depth;
+        const hasNext = rowHasNext(i);
+        const hasChild = !!(rows[i + 1] && rows[i + 1].depth > d);
+        const parentIdx = d > 0 ? stack[d - 1] : -1;
+        const parentHasNext = parentIdx !== undefined && parentIdx >= 0 ? rowHasNext(parentIdx) : false;
+        const segs = [];
+        // 1) 更上层祖先若后面还有兄弟，竖线要整行穿过
+        for (let k = 0; k < d - 1; k++) {
+          if (stack[k] !== undefined && rowHasNext(stack[k])) {
+            segs.push({ x: k * 16, top: "0", w: 1, h: "100%" });
+          }
+        }
+        // 2) 与上级相连的上半截 + 肘部横线
+        if (d > 0) {
+          segs.push({ x: (d - 1) * 16, top: "0", w: 1, h: "50%" });
+          segs.push({ x: (d - 1) * 16, top: "50%", w: 16 + 11, h: "1px" });
+          // 父节点后面还有兄弟，或本节点后面还有兄弟 → 干线要继续往下
+          if (hasNext || parentHasNext) {
+            segs.push({ x: (d - 1) * 16, top: "50%", w: 1, h: "50%" });
+          }
+        } else {
+          segs.push({ x: 0, top: "0", w: 1, h: "50%" });            // 接空间主干
+          segs.push({ x: 0, top: "50%", w: 11, h: "1px" });         // 肘部
+        }
+        // 3) 自己下半截：下面还有兄弟或子节点才画
+        if (hasNext || hasChild) segs.push({ x: d * 16, top: "50%", w: 1, h: "50%" });
+        // 4) 展开的目录块挡在空间主干（x=20）上：整行补一段，
+        //    让主干能穿过这些目录行继续连到下一个空间
+        if (spaceHasNext) segs.push({ left: "20px", top: "0", w: 1, h: "100%" });
+        r.segs = segs.map(s => ({ ...s, left: s.left || `calc(var(--trunk-x,20px) + ${s.x}px)` }));
+        stack.length = d;
+        stack[d] = i;
+      });
+      return rows;
+    });
+
+    async function newFolder() {
+      const name = await ask("请输入目录名称：");
+      if (!name) return;
+      // 明确父级：默认建在空间根，避免"选中某个目录时被静默挂成它的子目录"
+      let parentId = null;
+      const current = folders.value.find(f => f.id === folderId.value);
+      if (current) {
+        const asChild = await confirmBox(
+          `新建的「${name}」建在哪里？\n\n确定 = 作为「${current.name}」的子目录\n取消 = 建在空间根（与「${current.name}」同级）`);
+        if (asChild) parentId = current.id;
+      }
+      const nf = await api(`/api/spaces/${spaceId.value}/folders`, { method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, parent_id: parentId }) });
+      folders.value = await api(`/api/spaces/${spaceId.value}/folders`);
+      folderId.value = nf.id;   // 自动选中新目录
+      navFocus.value = "folder";
+      say(`目录「${name}」已创建${parentId ? `（位于「${current.name}」下）` : "（空间根）"}`);
+    }
+    function uploadClick() { fileInput.value.click(); }
+    // ---- 侧边栏上下文内联新建（空间/目录节点 hover 触发）----
+    async function gotoScreen(space, folder) {
+      spaceId.value = space.id;
+      folderId.value = folder ? folder.id : null;
+      navFocus.value = folder ? "folder" : "space";
+      view.value = "docs";
+      await loadAll();
+      saveNav();
+    }
+    async function quickNewFolder(space, parent) {
+      const where = parent ? `「${parent.name}」下` : `「${space.name}」空间根`;
+      const name = await ask(`在${where}新建目录，请输入目录名称：`);
+      if (!name || !name.trim()) return;
+      try {
+        await api(`/api/spaces/${space.id}/folders`, {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: name.trim(), parent_id: parent ? parent.id : null }),
+        });
+        say(`目录「${name.trim()}」已创建（${where}）`);
+        await gotoScreen(space, parent);
+      } catch (e) { say(e.message); }
+    }
+    async function quickNewDoc(space, folder) {
+      const where = folder ? `「${folder.name}」中` : `「${space.name}」空间根`;
+      const input = await ask(`在${where}新建文档`, "", "文档名（.md / .txt / .docx，缺省 .docx）");
+      if (!input || !input.trim()) return;
+      let name = input.trim(), ext = ".docx";
+      const m = name.match(/\.(md|txt|docx)$/i);
+      if (m) { ext = "." + m[1].toLowerCase(); name = name.slice(0, -m[0].length); }
+      try {
+        const qs = new URLSearchParams({ space_id: space.id });
+        if (folder) qs.set("folder_id", folder.id);
+        const body = { name, ext };
+        if (folder) body.folder_id = folder.id;
+        const r = await api(`/api/documents/create?${qs}`, {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+        say(`已创建「${r.name}${r.ext}」（v1）`);
+        await gotoScreen(space, folder);
+        openDoc(r);
+      } catch (e) { say(e.message); }
+    }
+    async function doUpload(e) {
+      const f = e.target.files[0];
+      if (!f) return;
+      const fd = new FormData();
+      fd.append("file", f);
+      fd.append("space_id", spaceId.value);
+      if (folderId.value) fd.append("folder_id", folderId.value);
+      try {
+        const fdArgs = { space_id: spaceId.value };
+        if (folderId.value) fdArgs.folder_id = folderId.value;
+        const r = await api(`/api/documents/upload?${new URLSearchParams(fdArgs)}`,
+            { method: "POST", body: fd });
+        say(`已上传「${r.name}${r.ext}」并生成 v1`);
+        await loadDocs();
+      } catch (err) { say(err.message); }
+      e.target.value = "";
+    }
+
+    async function openDoc(d) {
+      editOnly.value = false;
+      cur.value = d;
+      shareUrl.value = ""; diffOld.value = null; diffNew.value = null; diffResult.value = null;
+      selSeqs.value = []; diffModal.value = false;
+      editBase.value = ""; editText.value = ""; if (textActive.value) stopTextEditSession();
+      textActive.value = false;
+      docPerm.value = null;
+      await Promise.all([loadVersions(), loadDocPerm(d.id)]);
+    }
+    // ---- md/txt 文本编辑（独立覆盖层）----
+    const editText = ref(""), textActive = ref(false);
+    const editBase = ref("");     // 打开/保存成功时的服务端内容基准
+    // 脏判定 = 与基准的内容比对（而非「碰过就算」）：改动后又删掉/还原不算脏，避免放弃时误弹确认
+    const editDirty = computed(() => editText.value !== editBase.value);
+    const editMode = ref("split"), splitPct = ref(50), previewHtml = ref("");
+    const editArea = ref(null), previewArea = ref(null);
+    let previewTimer = null;
+
+    // 编辑区滚动 → 预览跟随到对应比例位置；反向（预览→编辑区）同样联动
+    let scrollLock = null;                 // 防回环标记：程序触发的滚动在对方 handler 里消费
+    function syncPreviewScroll() {
+      const ta = editArea.value, pv = previewArea.value;
+      if (!ta || !pv) return;
+      if (scrollLock === 'pv') { scrollLock = null; return; }
+      const taMax = Math.max(1, ta.scrollHeight - ta.clientHeight);
+      const pvMax = Math.max(0, pv.scrollHeight - pv.clientHeight);
+      pv.scrollTop = (ta.scrollTop / taMax) * pvMax;
+      scrollLock = 'ta';
+    }
+    function syncEditorScroll() {
+      const ta = editArea.value, pv = previewArea.value;
+      if (!ta || !pv) return;
+      if (scrollLock === 'ta') { scrollLock = null; return; }
+      const pvMax = Math.max(1, pv.scrollHeight - pv.clientHeight);
+      const taMax = Math.max(0, ta.scrollHeight - ta.clientHeight);
+      ta.scrollTop = (pv.scrollTop / pvMax) * taMax;
+      scrollLock = 'pv';
+    }
+
+    async function openTextEdit() {
+      editMode.value = "split"; splitPct.value = 50;
+      textActive.value = true;
+      await loadEditText();
+      // 与 OnlyOffice 编辑行为统一：打开即取编辑锁 + 心跳续锁 + 在线心跳，
+      // 让「谁正在编辑」的状态对所有格式一致可见
+      try { await api(`/api/documents/${cur.value.id}/lock`, { method: "POST" }); startHeartbeat(); } catch (_) {}
+      startPresence();
+    }
+    // 结束 md/txt 编辑会话：停心跳、释放编辑锁（与 closeOO 的清理动作对齐）
+    function stopTextEditSession() {
+      stopHeartbeat();
+      stopPresence();
+      if (cur.value) api(`/api/documents/${cur.value.id}/lock`, { method: "DELETE" }).catch(() => {});
+    }
+    function closeTextEdit() {
+      stopTextEditSession();
+      textActive.value = false;
+      if (editOnly.value) { cur.value = null; editOnly.value = false; loadDocs(); }
+    }
+
+    async function renderPreview() {
+      if (!cur.value || cur.value.ext !== ".md") return;
+      try {
+        const r = await api("/api/editors/render-md", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ content: editText.value }),
+        });
+        previewHtml.value = r.html;
+      } catch (e) { /* 预览失败不打断编辑 */ }
+    }
+    function onEditInput() {
+      clearTimeout(previewTimer);
+      previewTimer = setTimeout(renderPreview, 350);
+    }
+    function togglePane(side) {
+      if (side === "left") editMode.value = editMode.value === "left" ? "split" : "left";
+      else editMode.value = editMode.value === "right" ? "split" : "right";
+    }
+    function startDrag(e) {
+      e.preventDefault();
+      const split = e.currentTarget.parentElement;
+      const rect = split.getBoundingClientRect();
+      const move = ev => {
+        const pct = ((ev.clientX - rect.left) / rect.width) * 100;
+        splitPct.value = Math.min(80, Math.max(20, pct));
+      };
+      const up = () => {
+        window.removeEventListener("mousemove", move);
+        window.removeEventListener("mouseup", up);
+        document.body.style.cursor = "";
+      };
+      document.body.style.cursor = "col-resize";
+      window.addEventListener("mousemove", move);
+      window.addEventListener("mouseup", up);
+    }
+    async function discardText() {
+      // 与 OO 一致：无改动直接关闭不弹确认；有改动才二次确认（文案同 OO）
+      if (editDirty.value && !await confirmBox("放弃本次所有改动？\n\n编辑器里的修改将被丢弃，不会产生新版本。")) return;
+      await loadEditText();     // 重新载入已保存内容，避免下次打开残留改动
+      closeTextEdit();          // 统一出口：停心跳/释放锁/清理 editOnly
+      say("已放弃本次改动");
+    }
+    async function loadEditText() {
+      try {
+        const r = await api(`/api/documents/${cur.value.id}/raw_text`);
+        editText.value = r.content; editBase.value = r.content;
+        if (cur.value.ext === ".md") { previewHtml.value = ""; renderPreview(); }
+      } catch (e) { editText.value = ""; editBase.value = ""; }
+    }
+    async function createDoc() {
+      const input = await ask("新建文档", "", "文档名（.md / .txt / .docx，缺省 .docx）");
+      if (!input || !input.trim()) return;
+      let name = input.trim(), ext = ".docx";
+      const m = name.match(/\.(md|txt|docx)$/i);
+      if (m) { ext = "." + m[1].toLowerCase(); name = name.slice(0, -m[0].length); }
+      try {
+        const q = `space_id=${spaceId.value}` + (folderId.value ? `&folder_id=${folderId.value}` : "");
+        const r = await api(`/api/documents/create?${q}`, { method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name, ext, folder_id: folderId.value }) });
+        say(`已创建「${r.name}${r.ext}」（v1）`);
+        await loadDocs();
+        openDoc(r);
+      } catch (err) { say(err.message); }
+    }
+    async function saveText() {
+      // 与 OnlyOffice 保存行为统一：不打断用户、不强制填写版本说明，
+      // 说明自动记为「在线编辑」，变更幅度由版本历史的变更摘要展示
+      if (!editDirty.value) {          // 无改动：与「保存并关闭」语义一致，直接关闭
+        stopTextEditSession();
+        textActive.value = false;
+        if (editOnly.value) { cur.value = null; editOnly.value = false; }
+        return;
+      }
+      try {
+        const r = await api(`/api/documents/${cur.value.id}/save_text`, { method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ content: editText.value, note: "在线编辑" }) });
+        cur.value.latest_seq = r.seq;
+        editBase.value = editText.value;
+        stopTextEditSession();
+        textActive.value = false;
+        if (editOnly.value) { cur.value = null; editOnly.value = false; }
+        say(`✅ 保存成功：v${r.seq} 已入版本链${r.change_summary ? `（${fmtSummary(r.change_summary)}）` : ""}`);
+        await loadVersions();
+        await loadDocs();
+      } catch (err) { say(err.message); }
+    }
+
+    // ---- OnlyOffice 在线编辑（docx/xlsx/pptx） ----
+    const ooActive = ref(false);
+    const ooDirty = ref(false);   // OO 会话内是否出现过修改（sticky：置位后不复位，作为「放弃改动」是否弹确认的依据）
+    let ooDocEditor = null;
+    let ooHeartbeat = null;
+    function startHeartbeat() {
+      stopHeartbeat();
+      ooHeartbeat = setInterval(() => {
+        if (cur.value) api(`/api/documents/${cur.value.id}/lock`, { method: "POST" }).catch(() => {});
+      }, 60000);   // 每 60s 续期一次锁（TTL 300s）
+    }
+    function stopHeartbeat() { if (ooHeartbeat) { clearInterval(ooHeartbeat); ooHeartbeat = null; } }
+    // 在线状态：让服务端知道"谁正在这个文档的编辑会话里"，多人协同时禁止放弃改动
+    let presenceTimer = null;
+    function startPresence() {
+      stopPresence();
+      const ping = () => {
+        if (cur.value) api(`/api/editors/presence/${cur.value.id}`, { method: "POST" }).catch(() => {});
+      };
+      ping();
+      presenceTimer = setInterval(ping, 30000);
+    }
+    function stopPresence() { if (presenceTimer) { clearInterval(presenceTimer); presenceTimer = null; } }
+    async function openOO() {
+      try {
+        const r = await api(`/api/editors/config/${cur.value.id}?token=${encodeURIComponent(token.value)}`);
+        // 编辑模式：先取锁（写提交的锁校验依赖它），关闭时释放
+        if (r.mode === "edit") {
+          try { await api(`/api/documents/${cur.value.id}/lock`, { method: "POST" }); startHeartbeat(); } catch (_) {}
+        }
+        if (!window.DocsAPI) {
+          await new Promise((res, rej) => {
+            const s = document.createElement("script");
+            s.src = `${r.ds_url}/web-apps/apps/api/documents/api.js`;
+            s.onload = res; s.onerror = () => rej(new Error("api.js 加载失败"));
+            document.head.appendChild(s);
+          });
+        }
+        ooDirty.value = false;
+        ooActive.value = true;
+        await nextTick();
+        ooDocEditor = new DocsAPI.DocEditor("oo-editor", {
+          ...r.config, width: "100%", height: "100%",
+          events: {
+            // sticky 脏标记：本会话出现过未保存修改即置位（协同场景下 ev.data 可能瞬时回 false，不能直接采信）
+            onDocumentStateChange(ev) { if (ev && ev.data) ooDirty.value = true; },
+            onError() { say("OnlyOffice 编辑器错误，请重试"); },
+          },
+        });
+        if (r.mode === "view") say("只读模式：你对该文档没有写权限（系统管理员可点「临时获取写权限」）");
+        startPresence();
+      } catch (e) {
+        if (cur.value && jitNeeded(e.message) && await offerJit(cur.value, "write", () => openOO())) return;
+        say("无法启动 OnlyOffice：" + e.message); ooActive.value = false;
+      }
+    }
+    // ---- 列表页「编辑」快捷入口：OO 格式直接进编辑器，md/txt 打开详情页编辑区 ----
+    // ---- 内容预览（列表「查看」/ 版本「查看内容」/ 详情页入口共用）----
+    const pv = ref(null);
+    // 保真预览：这些格式走「转 PDF + 浏览器原生渲染」，避免自研 HTML 排版失真
+    const PDF_PREVIEW_EXTS = ['.docx', '.doc', '.pptx', '.ppt', '.xlsx', '.xls', '.pdf', '.rtf', '.odt', '.odp', '.ods'];
+    const IMG_PREVIEW_EXTS = ['.png', '.jpg', '.jpeg', '.gif'];
+    function closePreview() { pv.value = null; }
+    function openPvNewTab() {
+      if (!pv.value || !pv.value.url) return;
+      window.open(pv.value.url, "_blank");
+    }
+    async function previewDoc(d) { await openPreview(d, d.latest_seq); }
+    async function previewVersion(v) { if (cur.value) await openPreview(cur.value, v.seq); }
+
+    // 系统管理员的内容访问门禁（JIT）：只在真的被拦下时提示，一键申请后自动重试
+    const jitNeeded = m => /临时访问|JIT/.test(m || "");
+    async function offerJit(d, content = "read", after = null) {
+      if (!user.value || user.value.role !== "admin") return false;
+      const label = content === "write" ? "编辑" : "查看";
+      const ok = await confirmBox(
+        `「${d.name}${d.ext || ""}」的内容受保护：系统管理员默认不可查看业务内容。\n\n`
+        + `是否申请 2 小时临时${label}权限？到期自动失效，本次提权会写入审计日志。`);
+      if (!ok) return false;
+      try {
+        await api(`/api/admin/elevate/${d.id}?hours=2&content=${content}`, { method: "POST" });
+        say(`已获得 2 小时临时${label}权限`);
+        if (after) await after();
+        return true;
+      } catch (e) { say(e.message); return false; }
+    }
+    async function openPreview(d, seq) {
+      const t = new Date();
+      const wm = `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, "0")}-${String(t.getDate()).padStart(2, "0")} ${String(t.getHours()).padStart(2, "0")}:${String(t.getMinutes()).padStart(2, "0")}`;
+      const who = user.value ? (user.value.display_name || user.value.username) : "";
+      const ext = (d.ext || "").toLowerCase();
+      const wmText = `仅限 ${who} 查看 · ${wm} · 内部资料，请勿外传`;
+
+      // 先开弹窗显示加载态，避免大文档转换期间"点了没反应"
+      if (PDF_PREVIEW_EXTS.includes(ext) || IMG_PREVIEW_EXTS.includes(ext)) {
+        pv.value = { id: d.id, name: d.name, ext: d.ext, seq, loading: true, _wm: wm, _wmText: wmText };
+      }
+
+      // 优先走「服务端转 PDF → 浏览器原生渲染」，版式与原件完全一致
+      if (PDF_PREVIEW_EXTS.includes(ext) || IMG_PREVIEW_EXTS.includes(ext)) {
+        const url = `/api/documents/${d.id}/versions/${seq}/render?token=${encodeURIComponent(token.value)}`;
+        try {
+          // 只探前 2 字节（206）确认可用，避免把整份 PDF 先下载一遍
+          const probe = await fetch(url, { headers: { Range: "bytes=0-1" } });
+          if (probe.ok || probe.status === 206) {
+            const isImg = IMG_PREVIEW_EXTS.includes(ext);
+            const viewer = `/pdf-viewer.html?src=${encodeURIComponent(url)}`
+              + `&wm=${encodeURIComponent(wmText)}&title=${encodeURIComponent(d.name + (d.ext || ""))}`;
+            pv.value = {
+              id: d.id, name: d.name, ext: d.ext, seq,
+              kind: isImg ? "image" : "pdf",
+              url: isImg ? url : viewer, _wm: wm, _wmText: wmText,
+            };
+            return;
+          }
+          if (probe.status === 401) {
+            pv.value = null;
+            authLost();
+            return;
+          }
+          if ([403, 404].includes(probe.status)) {
+            let msg = "无法查看该文档内容";
+            try { msg = (await probe.json()).detail || msg; } catch (_) {}
+            pv.value = null;
+            if (jitNeeded(msg) && await offerJit(d, "read", () => openPreview(d, seq))) return;
+            say(msg);
+            return;
+          }
+          // 415/500：转换不可用 → 回落 HTML，并明确告知
+          say("保真预览暂不可用，已回落到文本预览");
+        } catch (_) {
+          say("保真预览暂不可用，已回落到文本预览");
+        }
+      }
+
+      // 回落：结构化 HTML / 纯文本
+      try {
+        const r = await api(`/api/documents/${d.id}/versions/${seq}/content`);
+        r._wm = wm; r._wmText = wmText;
+        pv.value = r;
+      } catch (err) {
+        if (jitNeeded(err.message) && await offerJit(d, "read", () => openPreview(d, seq))) return;
+        say(err.message);
+      }
+    }
+    async function quickEdit(d) {
+      // 直接进入编辑界面：Office → OnlyOffice 全屏编辑器；md/txt → 分栏文本编辑器
+      editOnly.value = true;
+      cur.value = d;
+      editBase.value = ""; editText.value = "";
+      shareUrl.value = ""; diffOld.value = null; diffNew.value = null; diffResult.value = null;
+      selSeqs.value = []; diffModal.value = false;
+      const ext = d.ext.slice(1).toLowerCase();
+      if (["docx", "xlsx", "pptx"].includes(ext)) {
+        await loadVersions();
+        openOO();
+      } else {
+        await loadVersions();
+        await openTextEdit();
+      }
+    }
+    async function closeOO() {
+      stopHeartbeat();
+      stopPresence();
+      const seqBefore = cur.value ? cur.value.latest_seq : null;
+      if (ooDocEditor) { try { ooDocEditor.destroyEditor(); } catch (_) {} }
+      ooDocEditor = null; ooActive.value = false;
+      say("保存中：等待服务器写入版本…");
+      // DS 在最后一个协同者断开后才回调落库，耗时不定，轮询等待（最长 25s）
+      await waitNewVersion(seqBefore, 25000);
+      if (cur.value && versions.value.length) cur.value.latest_seq = versions.value[0].seq;
+      api(`/api/documents/${cur.value.id}/lock`, { method: "DELETE" }).catch(() => {});
+      if (seqBefore !== null && cur.value.latest_seq > seqBefore) {
+        say(`✅ 保存成功：v${cur.value.latest_seq} 已入版本链`);
+        await loadDocs();          // 列表页的版本号同步刷新
+      } else {
+        say("编辑器已关闭（未检测到内容改动，故未产生新版本）");
+      }
+      if (editOnly.value) { cur.value = null; editOnly.value = false; await loadDocs(); }
+    }
+    async function discardOO() {
+      if (!cur.value) return;
+      // 与 md/txt 一致：无改动直接关闭不弹确认；有改动才二次确认
+      if (ooDirty.value && !await confirmBox("放弃本次所有改动？\n\n编辑器里的修改将被丢弃，不会产生新版本。")) return;
+      ooDirty.value = false;
+      // 多人协同时禁止：会话级保存会把其他人的改动一并丢弃
+      try {
+        const p = await api(`/api/editors/presence/${cur.value.id}`);
+        if (p.others > 0) {
+          return say(`无法放弃：${p.names.join("、")} 正在同时编辑此文档，放弃会一并丢弃对方的改动`);
+        }
+      } catch (e) { /* 检查失败时交给服务端兜底 */ }
+      // 先打丢弃标记，再销毁编辑器：随后的保存回调会被服务端忽略
+      try { await api(`/api/editors/discard/${cur.value.id}`, { method: "POST" }); }
+      catch (e) { return say(e.message); }
+      stopHeartbeat(); stopPresence();
+      if (ooDocEditor) { try { ooDocEditor.destroyEditor(); } catch (_) {} }
+      ooDocEditor = null; ooActive.value = false;
+      api(`/api/documents/${cur.value.id}/lock`, { method: "DELETE" }).catch(() => {});
+      await new Promise(r => setTimeout(r, 2200));
+      await loadVersions();
+      await loadDocs();
+      say("已放弃本次改动，未产生新版本");
+      if (editOnly.value) { cur.value = null; editOnly.value = false; }
+    }
+    async function waitNewVersion(before, timeoutMs) {
+      const t0 = Date.now();
+      while (Date.now() - t0 < timeoutMs) {
+        await new Promise(r => setTimeout(r, 1500));
+        await loadVersions();
+        const latest = versions.value.length ? versions.value[0].seq : null;
+        if (latest !== null && (before === null || latest > before)) return latest;
+      }
+      await loadVersions();
+      return versions.value.length ? versions.value[0].seq : null;
+    }
+    async function loadVersions() { versions.value = await api(`/api/documents/${cur.value.id}/versions`); }
+    function downloadDoc(d) {
+      fetch(`${API}/api/documents/${d.id}/download`, { headers: { Authorization: "Bearer " + token.value } })
+        .then(async r => {
+          if (r.status === 401) { authLost(); throw new Error("登录已过期，请重新登录"); }
+          if (r.ok) return r.blob();
+          let msg = "下载失败";
+          try { msg = (await r.json()).detail || msg; } catch (_) {}
+          throw new Error(msg);
+        }).then(b => {
+          const a = document.createElement("a");
+          a.href = URL.createObjectURL(b);
+          a.download = `${d.name}_v${d.latest_seq}${d.ext || ""}`;  // 标准格式 + 版本号命名（F-07）
+          a.click();
+        }).catch(async e => {
+          if (jitNeeded(e.message) && await offerJit(d, "read", () => downloadDoc(d))) return;
+          say(e.message);
+        });
+    }
+    function downloadVersion(v) {
+      fetch(`${API}/api/documents/${cur.value.id}/versions/${v.seq}/download`, { headers: { Authorization: "Bearer " + token.value } })
+        .then(r => {
+          if (r.status === 401) { authLost(); return Promise.reject(new Error("登录已过期，请重新登录")); }
+          return r.ok ? r.blob() : Promise.reject(new Error("下载失败"));
+        }).then(b => {
+          const a = document.createElement("a");
+          a.href = URL.createObjectURL(b);
+          a.download = `${cur.value.name}_v${v.seq}${v.ext || cur.value.ext || ""}`;  // F-34：版本下载命名含版本号
+          a.click();
+        }).catch(e => say(e.message));
+    }
+    async function acquireLock() {
+      try { const r = await api(`/api/documents/${cur.value.id}/lock`, { method: "POST" }); startHeartbeat(); say(`编辑锁已获取（${r.ttl}s TTL，每 60s 自动续期）`); }
+      catch (e) { say(e.message); }
+    }
+    async function releaseLock() { await api(`/api/documents/${cur.value.id}/lock`, { method: "DELETE" }); stopHeartbeat(); say("已释放"); }
+    async function rollback(v) {
+      if (!await confirmBox(`确认回滚到 v${v.seq}？将以该版本内容生成新版本，历史不会丢失。`)) return;
+      try {
+        const r = await api(`/api/documents/${cur.value.id}/versions/rollback?target_seq=${v.seq}`, { method: "POST" });
+        say(`已回滚：生成 v${r.seq}（${r.source_ref}）`);
+        await loadVersions();
+      } catch (e) { say(e.message); }
+    }
+    // ---- 版本标签（git tag 语义：标签指向某个具体版本）----
+    const tagDlg = ref(null), tagInput = ref(""), tagSugs = ref([]);
+    const tagList = ref([]), tagSel = ref(null), tagResults = ref([]), tagOptions = ref([]);
+    const tagDocCount = computed(() => new Set(tagResults.value.map(r => r.document.id)).size);
+
+    async function tagVersion(v) {
+      if (!cur.value) return;
+      tagDlg.value = { docId: cur.value.id, docName: cur.value.name + (cur.value.ext || ""),
+                       seq: v.seq, tags: [...(v.tags || [])] };
+      tagInput.value = "";
+      await loadTagSuggestions("");
+    }
+    async function loadTagSuggestions(q) {
+      try { tagSugs.value = (await api(`/api/tags?q=${encodeURIComponent(q || "")}`)).slice(0, 10); }
+      catch (e) { tagSugs.value = []; }
+    }
+    async function addTags() {
+      const raw = (tagInput.value || "").trim();
+      if (!raw || !tagDlg.value) return;
+      try {
+        const r = await api(`/api/documents/${tagDlg.value.docId}/versions/tags?version_seq=${tagDlg.value.seq}`
+          + `&names=${encodeURIComponent(raw)}`, { method: "POST" });
+        tagInput.value = "";
+        await syncTagDlg();
+        say(r.added.length ? `已添加 ${r.added.length} 个标签` : "标签已存在，已忽略");
+        await loadVersions();
+        await loadTagSuggestions("");
+        await refreshTagOptions();
+      } catch (e) { say(e.message); }
+    }
+    async function delVersionTag(name) {
+      if (!tagDlg.value) return;
+      try {
+        await api(`/api/documents/${tagDlg.value.docId}/versions/tags?version_seq=${tagDlg.value.seq}`
+          + `&name=${encodeURIComponent(name)}`, { method: "DELETE" });
+        await syncTagDlg();
+        say("标签已删除");
+        await loadVersions();
+        await refreshTagOptions();
+      } catch (e) { say(e.message); }
+    }
+    async function syncTagDlg() {
+      if (!tagDlg.value) return;
+      const vs = await api(`/api/documents/${tagDlg.value.docId}/versions`);
+      const v = vs.find(x => x.seq === tagDlg.value.seq);
+      tagDlg.value.tags = v ? [...(v.tags || [])] : [];
+    }
+
+    // ---- 标签视图：按标签找“打了该标签的所有版本” ----
+    async function refreshTagOptions() {
+      try { tagOptions.value = await api("/api/tags"); } catch (e) { tagOptions.value = []; }
+    }
+    async function loadTagView() {
+      view.value = "tags"; saveNav();
+      await refreshTagOptions();
+      tagList.value = tagOptions.value;
+      if (tagSel.value && !tagList.value.some(t => t.name === tagSel.value)) {
+        tagSel.value = null; tagResults.value = [];
+      }
+      if (tagSel.value) await pickTag(tagSel.value);
+      else if (tagList.value.length) await pickTag(tagList.value[0].name);
+    }
+    async function pickTag(name) {
+      tagSel.value = name;
+      try {
+        tagResults.value = await api(`/api/tags/versions?tag=${encodeURIComponent(name)}`);
+      } catch (e) { tagResults.value = []; say(e.message); }
+    }
+    async function openTagResult(r) {
+      // 直接预览该版本，不打开「详情」弹窗（详情只在需要看版本历史/分享/权限时才进）
+      const d = { id: r.document.id, name: r.document.name, ext: r.document.ext };
+      await openPreview(d, r.version.seq);
+    }
+    function downloadTagVersion(r) {
+      fetch(`${API}/api/documents/${r.document.id}/versions/${r.version.seq}/download`,
+            { headers: { Authorization: "Bearer " + token.value } })
+        .then(res => {
+          if (res.status === 401) { authLost(); return Promise.reject(new Error("登录已过期，请重新登录")); }
+          return res.ok ? res.blob() : Promise.reject(new Error("下载该版本失败"));
+        }).then(b => {
+          const a = document.createElement("a");
+          a.href = URL.createObjectURL(b);
+          a.download = `${r.document.name}_v${r.version.seq}${r.document.ext || ""}`;
+          a.click();
+        }).catch(e => say(e.message));
+    }
+    // ---- 版本对比：勾选两个版本（最多 2 个）→ 弹窗展示变更详情 ----
+    const selSeqs = ref([]), diffModal = ref(false);
+    const diffChanged = computed(() => (diffResult.value ? diffResult.value.segments.filter(x => x.op !== "equal") : []));
+    // 侧边栏目录树的「主干」x 坐标：直接量空间图标中线的实际像素，
+    // 不靠 CSS 累加推算（emoji 换 SVG、字体缩放都会让手算值偏掉）
+    function syncTrunkX() {
+      const ic = document.querySelector('.sidebar .item.sub .node-ic');
+      const row = ic && ic.closest('.item.sub');
+      if (!ic || !row) return;
+      const a = ic.getBoundingClientRect(), b = row.getBoundingClientRect();
+      const x = Math.round(a.left + a.width / 2 - b.left);
+      document.querySelector('.sidebar').style.setProperty('--trunk-x', x + 'px');
+    }
+    const space = computed(() => spaces.value.find(x => x.id === spaceId.value) || null);
+    // 当前目录的完整路径（含祖先），用于顶部面包屑：空间 / A / B
+    const folderPath = computed(() => {
+      if (!folderId.value) return [];
+      const byId = new Map(folders.value.map(f => [f.id, f]));
+      const path = [];
+      let cur = byId.get(folderId.value), guard = 0;
+      while (cur && guard++ < 20) {
+        path.unshift({ id: cur.id, name: cur.name });
+        cur = cur.parent_id ? byId.get(cur.parent_id) : null;
+      }
+      return path;
+    });
+    // 分享 = 数据外发：需要内容写权限或对象管理权限（只读用户不可对外分享）
+    const canShare = computed(() => {
+      const m = docPerm.value && docPerm.value.my;
+      return !!(m && (m.can_write || m.can_manage));
+    });
+    const isSel = seq => selSeqs.value.includes(seq);
+    function toggleSel(seq) {
+      const i = selSeqs.value.indexOf(seq);
+      if (i >= 0) { selSeqs.value.splice(i, 1); return; }
+      // 已选满两个时，撤销上一个（最近一次）选中，保留最早选的和新选的
+      if (selSeqs.value.length >= 2) selSeqs.value.pop();
+      selSeqs.value.push(seq);
+    }
+    async function openDiff() {
+      if (selSeqs.value.length !== 2) return say("请先勾选两个版本");
+      const [a, b] = [...selSeqs.value].sort((x, y) => x - y);
+      try {
+        const r = await api(`/api/documents/${cur.value.id}/versions/diff?old=${a}&new=${b}`);
+        diffOld.value = a; diffNew.value = b; diffResult.value = r; diffModal.value = true;
+      } catch (e) { say(e.message); }
+    }
+    async function trashDoc(d) {
+      if (!await confirmBox(`移入回收站？版本链会保留，30 天内可恢复。`)) return;
+      await api(`/api/documents/${d.id}`, { method: "DELETE" });
+      say("已移入回收站"); await loadDocs();
+    }
+    async function restoreDoc(d) {
+      await api(`/api/documents/${d.id}/restore`, { method: "POST" });
+      say("已恢复"); await openTrash();
+    }
+    async function openTrash() {
+      view.value = "trash";
+      docs.value = await api(`/api/documents/trash/list?space_id=${spaceId.value}`);
+      saveNav();
+    }
+
+    // ---- 下载（详情页）：自动绑定离线基线，回传时享受智能比对；无编辑权限降级普通下载 ----
+    function downloadSmart(d) {
+      fetch(`${API}/api/documents/${d.id}/offline/task`, { method: "POST", headers: { Authorization: "Bearer " + token.value } })
+        .then(r => {
+          if (r.status === 401) { authLost(); return null; }
+          if (r.status === 403) { downloadDoc(d); return null; }   // view-only 用户降级
+          if (!r.ok) throw new Error("下载失败");
+          return r.blob().then(b => ({ b, r }));
+        }).then(x => {
+          if (!x) return;
+          const cd = x.r.headers.get("Content-Disposition") || "";
+          const m = cd.match(/filename\*=UTF-8''([^;]+)/);
+          const a = document.createElement("a");
+          a.href = URL.createObjectURL(x.b);
+          a.download = m ? decodeURIComponent(m[1]) : `${d.name}_v${d.latest_seq}${d.ext}`;
+          a.click();
+          say(`已下载（绑定基线 v${d.latest_seq}，改完在「提交新版本」回传会自动比对）`);
+        }).catch(e => say(e.message));
+    }
+
+    // ---- 提交新版本（统一入口）：自动识别离线基线标记 → 有则比对/冲突确认，无则直接提交 ----
+    function commitClick() { commitInput.value.click(); }
+    async function doCommit(e) {
+      const f = e.target.files[0];
+      if (!f) return;
+      const note = await ask("版本说明（必填，如：补充第三章预算数据）：");
+      if (!note || !note.trim()) { e.target.value = ""; return say("已取消：版本说明必填"); }
+      const fd = new FormData();
+      fd.append("file", f);
+      try {
+        const r = await api(`/api/documents/${cur.value.id}/offline/smart?note=${encodeURIComponent(note.trim())}`,
+          { method: "POST", body: fd });
+        if (r.mode === "committed") {
+          const s = r.change_summary;
+          say(`已提交 v${r.seq}${s ? `（+${s.added_chars}/-${s.removed_chars} 字，${s.changed_units} 个${s.unit}变更）` : ""}`);
+          cur.value.latest_seq = r.seq;
+          await loadVersions();
+        } else {
+          // 文件带离线基线标记：自动合并入链，不再要求用户确认
+          offlineTmpFile = r._tmp_file; offlineTaskToken = r.task_token;
+          const p = new URLSearchParams({ tmp_file: offlineTmpFile, task_token: offlineTaskToken, note: note.trim() });
+          const c = await api(`/api/documents/${cur.value.id}/offline/return/confirm?${p}`, { method: "POST" });
+          if (r.is_conflict) {
+            say(`已自动合并为 v${c.seq}：检测到与主线（v${r.latest_seq}）重叠改动，已以本次提交为准，原版本保留可随时回滚`);
+          } else {
+            const s = r.diff_vs_base.summary;
+            say(`已合并基线 v${r.base_seq} 的改动为 v${c.seq}（+${s.added}/-${s.removed} 字，${s.changed_units} 个${s.unit}变更）`);
+          }
+          cur.value.latest_seq = c.seq;
+          await loadVersions();
+        }
+      } catch (err) { say(err.message); }
+      e.target.value = "";
+    }
+
+    async function createShare() {
+      const p = new URLSearchParams();
+      if (sharePwd.value) p.set("password", sharePwd.value);
+      if (shareHours.value) p.set("expires_hours", shareHours.value);
+      try {
+        const r = await api(`/api/shares/${cur.value.id}?${p}`, { method: "POST" });
+        shareUrl.value = location.origin + r.url;
+        say(r.reused ? "已存在相同设置的分享链接，直接复用（未新增记录）" : "分享链接已生成");
+      } catch (e) { say(e.message); }
+    }
+    async function copyShare() {
+      if (!shareUrl.value) return;
+      let ok = false;
+      try {
+        await navigator.clipboard.writeText(shareUrl.value);
+        ok = true;
+      } catch (e) {
+        // 非 HTTPS 环境下 clipboard API 不可用，回退到 execCommand
+        const ta = document.createElement("textarea");
+        ta.value = shareUrl.value; ta.style.position = "fixed"; ta.style.opacity = "0";
+        document.body.appendChild(ta); ta.select();
+        ok = document.execCommand("copy");
+        document.body.removeChild(ta);
+      }
+      if (ok) {
+        copied.value = true;
+        clearTimeout(copyTimer); copyTimer = setTimeout(() => { copied.value = false; }, 1800);
+        say("链接已复制到剪贴板");
+      } else {
+        say("复制失败，请手动选中链接复制");
+      }
+    }
+
+    async function loadAudit() { view.value = "audit"; auditLogs.value = await api("/api/admin/audit"); saveNav(); }
+    async function loadStats() { view.value = "stats"; stats.value = await api("/api/admin/stats"); saveNav(); }
+
+    // ---- 用户组：树 / 成员 ----
+    const groupRows = computed(() => groups.value);
+    // 当前组在树中的路径（根 → 当前），用于详情头部直接展示层级
+    const groupPath = computed(() => {
+      const d = groupDetail.value;
+      if (!d) return [];
+      const byId = new Map(groups.value.map(g => [g.id, g]));
+      const chain = [];
+      let cur = byId.get(d.id) || { id: d.id, name: d.name, parent_id: d.parent_id };
+      let guard = 0;
+      while (cur && guard++ < 32) {
+        chain.unshift(cur);
+        cur = cur.parent_id ? byId.get(cur.parent_id) : null;
+      }
+      return chain;
+    });
+    const groupUserCandidates = computed(() => {
+      const inGroup = new Set((groupDetail.value?.members || []).map(m => m.user_id));
+      return groupUsers.value.filter(u => !inGroup.has(u.user_id));
+    });
+    async function loadGroups() {
+      view.value = "groups"; saveNav();
+      const r = await api("/api/groups");
+      groups.value = r.groups;
+      if (groupSel.value && !groups.value.some(g => g.id === groupSel.value)) { groupSel.value = null; groupDetail.value = null; }
+      if (groupSel.value) await selectGroup(groupSel.value, true);
+      else if (groups.value.length) await selectGroup(groups.value[0].id);
+      groupUsers.value = await api("/api/admin/users").catch(() => []);
+    }
+    async function selectGroup(id, silent = false) {
+      groupSel.value = id;
+      groupDetail.value = await api(`/api/groups/${id}`);
+      groupAddUser.value = null;
+      if (!silent) { /* 保持当前选中 */ }
+    }
+    async function newGroup(parentId) {
+      const name = await ask(parentId ? "新建子组名称" : "新建用户组名称");
+      if (!name) return;
+      try {
+        const g = await api("/api/groups", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name, parent_id: parentId || null }),
+        });
+        say("组已创建");
+        await loadGroups();
+        await selectGroup(g.id);
+      } catch (e) { say(e.message); }
+    }
+    async function renameGroup(g) {
+      const name = await ask("重命名用户组", g.name);
+      if (!name || name === g.name) return;
+      try {
+        await api(`/api/groups/${g.id}`, {
+          method: "PATCH", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name }),
+        });
+        say("已重命名");
+        await loadGroups();
+      } catch (e) { say(e.message); }
+    }
+    async function deleteGroup(g) {
+      if (!await confirmBox(`删除用户组「${g.name}」？\n\n其子组、成员关系以及该组在各处的授权都会一并移除。`)) return;
+      try {
+        await api(`/api/groups/${g.id}`, { method: "DELETE" });
+        say("已删除");
+        if (groupSel.value === g.id) { groupSel.value = null; groupDetail.value = null; }
+        await loadGroups();
+      } catch (e) { say(e.message); }
+    }
+    async function addGroupMember() {
+      if (!groupAddUser.value || !groupDetail.value) return;
+      try {
+        await api(`/api/groups/${groupDetail.value.id}/members`, {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ user_id: groupAddUser.value }),
+        });
+        say("已加入组");
+        groupAddUser.value = null;
+        await selectGroup(groupDetail.value.id);
+        await loadGroups();
+      } catch (e) { say(e.message); }
+    }
+    async function removeGroupMember(m) {
+      if (!await confirmBox(`把「${m.display_name || m.username}」移出本组？`)) return;
+      try {
+        await api(`/api/groups/${groupDetail.value.id}/members/${m.user_id}`, { method: "DELETE" });
+        say("已移出");
+        await selectGroup(groupDetail.value.id);
+        await loadGroups();
+      } catch (e) { say(e.message); }
+    }
+
+    boot();
+    return {
+      token, user, buildTag, toast, auth, doAuth, logout, say, staleBuild, reloadPage,
+      dlg, dlgOk, dlgCancel,
+      spaces, spaceRows, spaceId, folders, folderRows, folderId, navFocus, docs, exts, searchQ, filterExt, searchScope,
+      cur, versions, editOnly, diffOld, diffNew, diffResult, view, auditLogs, stats,
+      sharePwd, shareHours, shareUrl, copied, fileInput, commitInput,
+      fmtSize, fmtTime, srcLabel, fmtSummary, noteText,
+      loadAll, loadDocs, doSearch, onExtChange, onScopeChange, newSpace, renameSpace, deleteSpace, newFolder, renameFolder, uploadClick, doUpload,
+      quickNewFolder, quickNewDoc,
+      fp, fpAddUser, fpAddPerm, fpAddType, fpAddGroup, openFolderPerm, toggleFolderPrivate, moveFolderToRoot, addFolderPerm,
+      perm, docPerm, permAddUser, permAddContent, permAddAdmin, permAddHours, permAddType, permAddGroup,
+      openPerm, addPerm, updatePerm, removePerm, elevateDoc,
+      updateFolderPerm, removeFolderPerm,
+      groups, groupRows, groupPath, groupSel, groupDetail, groupAddUser, groupUserCandidates,
+      loadGroups, selectGroup, newGroup, renameGroup, deleteGroup, addGroupMember, removeGroupMember,
+      searchTag, tagOptions, tagDlg, tagInput, tagSugs, tagList, tagSel, tagResults, tagDocCount,
+      tagSuggest, tagSugIdx, tagSugOpen, tagFrag, onSearchInput, onSearchFocus, hideTagSug,
+      moveTagSug, applyTagSug, onSearchEnter,
+      loadTagView, pickTag, openTagResult, downloadTagVersion, addTags, delVersionTag, loadTagSuggestions, refreshTagOptions,
+      switchSpace, pickFolder, pickRoot,
+      editText, editDirty, textActive, editMode, splitPct, previewHtml,
+      editArea, previewArea, syncPreviewScroll, syncEditorScroll,
+      onEditInput, togglePane, startDrag, discardText,
+      createDoc, loadEditText, saveText, openTextEdit, closeTextEdit,
+      ooActive, ooDirty, openOO, closeOO, discardOO, quickEdit, pv, closePreview, openPvNewTab, previewDoc, previewVersion,
+      openDoc, downloadDoc, downloadVersion, acquireLock, releaseLock,
+      rollback, tagVersion, selSeqs, isSel, toggleSel, openDiff, diffModal, diffChanged, canShare,
+      folderPath, space, trashDoc, restoreDoc, openTrash,
+      createShare, copyShare, commitClick, doCommit, downloadSmart,
+      loadAudit, loadStats,
+    };
+  },
+}).mount("#app");
+</script>
+</body>
+</html>

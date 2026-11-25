@@ -1,0 +1,14 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 报告安全漏洞
+    url: https://github.com/amysonwu/docvault/security/advisories/new
+    about: 请勿公开提交安全问题，使用私密渠道
+  - name: 使用与部署讨论
+    url: https://github.com/amysonwu/docvault/discussions
+    about: 安装部署、配置疑问、经验分享
+  - name: 商业合作与定制开发
+    url: https://github.com/amysonwu/docvault/blob/main/COMMERCIAL.md
+    about: 先看合作方式与边界，再开标题带 [商业] 的议题
+  - name: 支持范围与响应预期
+    url: https://github.com/amysonwu/docvault/blob/main/SUPPORT.md
+    about: 有哪些渠道、多久回复、不提供什么

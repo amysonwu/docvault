@@ -1,0 +1,44 @@
+# ---- 运行时数据（绝不可入库）----
+data/
+backup/
+*.log
+*.sql.gz
+
+# ---- 环境与密钥 ----
+.env
+.env.*
+!.env.example
+deploy/*.env
+!deploy/.env.example
+DOCVAULT_JWT_SECRET*
+fonts/*
+!fonts/README.md
+
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# ---- 编辑器 / 系统 ----
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+desktop.ini
+_check*.js
+_c.js
+
+# ---- 构建与临时产物 ----
+*.tar
+*.tar.gz
+icon-preview/
+fonts-work/
+
+# ---- 本机开发编排（不入库；部署编排见 deploy/docker-compose.yml）----
+/docker-compose.yml
+
