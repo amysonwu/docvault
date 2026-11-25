@@ -234,8 +234,18 @@ python scripts/tag_test.py   http://127.0.0.1:10001   # 版本标签 20 项
 
 ## English
 
-**DocVault** is a self-hosted document management platform: content-addressed storage, full version chain with structural diff & rollback, Git-style version tags, an enterprise permission kernel (space → folder → document, user groups, just-in-time elevation for admins), OnlyOffice-powered online editing, watermarked PDF preview, password-protected share links, and end-to-end audit logging.
+**DocVault** is a self-hosted document management system with version control. Every save becomes a new version you can diff, tag and roll back, and versions are stored with chunk-level deduplication so an edit only costs the blocks that actually changed.
 
-Built for air-gapped and privacy-sensitive environments: **no telemetry, no CDN, no outbound calls at runtime** — a single `docker compose up` on your own server.
+- **Online editing** for Word / Excel / PowerPoint (docx, xlsx, pptx) through OnlyOffice, plus Markdown and plain-text editing in the browser
+- **Structural diff** between any two versions: paragraphs, tables, cells, with added/removed counts
+- **Document versioning**: Git-style version tags, rollback that never deletes history
+- **Permission kernel**: space, folder, document and user-group ACLs, just-in-time elevation for administrators, private folders that stay invisible
+- **Chinese full-text search** (MySQL ngram) plus tag search, cross-space, always filtered by permission
+- **Governance**: PDF preview with dynamic watermark, password-protected share links, end-to-end audit log, 30-day recycle bin
+- **Storage**: content-addressed blocks, zstd compression, deduplication stats in the admin panel
+
+Built for air-gapped and privacy-sensitive environments: **no telemetry, no CDN, no outbound calls at runtime**; a single `docker compose up` on your own server.
+
+This category is usually described as self-hosted document management, on-premise DMS, or document version control. DocVault is the version of it that also does online Office editing, deduplicated storage, watermarked preview and a full audit trail.
 
 License: AGPL-3.0-or-later (commercial licensing available).
