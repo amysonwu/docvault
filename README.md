@@ -12,7 +12,7 @@
 
 [![regression](https://img.shields.io/github/actions/workflow/status/amysonwu/docvault/regression.yml?label=regression)](https://github.com/amysonwu/docvault/actions/workflows/regression.yml)
 
-[快速开始](#快速开始) · [功能](#功能) · [隐私与合规](#为什么数据不出内网) · [路线图](docs/ROADMAP.md) · [架构](#架构) · [支持](SUPPORT.md)
+[快速开始](#快速开始) · [功能](#功能) · [界面](#界面) · [隐私与合规](#为什么数据不出内网) · [路线图](docs/ROADMAP.md) · [架构](#架构) · [支持](SUPPORT.md)
 
 ---
 
@@ -74,6 +74,26 @@ DocVault 管三件事：记住每份文档的前世今生，谁改的、改了�
 - 回收站：30 天可恢复，删除是软删除
 - 离线回传比对：文件带出内网改完传回，自动与基线 diff，只提交差异说明
 - 存储统计：逻辑容量与磁盘实际占用对照，去重收益可查
+
+## 界面
+
+截图取自本地实例，内容为演示数据。
+
+**文档列表**：左侧按空间和目录组织，列表直接给出当前版本、可编辑状态、版本标签和最后更新人。
+
+![文档列表](docs/assets/screenshots/list.png)
+
+**版本历史**：每个版本都有来源（上传 / 在线编辑）、变更摘要（增删字数与段落数）、提交人与标签。勾选任意两版即可对比。
+
+![版本历史](docs/assets/screenshots/versions.png)
+
+**在线编辑**：docx / xlsx / pptx 在浏览器内编辑，版式与本地 Office 一致，保存即生成新版本。
+
+![在线编辑](docs/assets/screenshots/editor.png)
+
+**存储统计**：逻辑容量与实际磁盘占用对照，块级去重和压缩到底省了多少，一眼能看到。
+
+![存储统计](docs/assets/screenshots/stats.png)
 
 ## 快速开始
 

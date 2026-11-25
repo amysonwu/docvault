@@ -227,18 +227,45 @@ def _pdf_html(path: Path) -> str:
     return "".join(out)
 
 
+# content_text 列为 TEXT（上限 65535 字节），中文按 UTF-8 三字节算约 2 万字；
+# 按字节裁剪，保证超长文档只丢索引尾部，不会让整次上传失败
+CONTENT_LIMIT_BYTES = 60_000
+
+
+def _clip(s: str) -> str:
+    b = (s or "").encode("utf-8")
+    if len(b) <= CONTENT_LIMIT_BYTES:
+        return s or ""
+    return b[:CONTENT_LIMIT_BYTES].decode("utf-8", "ignore")
+
+
+def _looks_binary(path: Path) -> bool:
+    """后缀是文本但内容是二进制（改后缀、压缩包误命名）：不写索引，避免乱码与超长"""
+    try:
+        head = path.read_bytes()[:4096]
+    except Exception:
+        return True
+    if b"\x00" in head:
+        return True
+    # 允许少量非法字节（个别编码混用），但占比过高视为二进制
+    bad = sum(1 for c in head if c < 9 or 13 < c < 32)
+    return bad > len(head) * 0.05
+
+
 def extract_text(path: Path, ext: str) -> str | None:
     try:
         if ext == ".docx":
-            return _docx(path)
+            return _clip(_docx(path))
         if ext == ".pptx":
-            return _pptx(path)
+            return _clip(_pptx(path))
         if ext == ".xlsx":
-            return _xlsx(path)
+            return _clip(_xlsx(path))
         if ext == ".pdf":
-            return _pdf(path)
+            return _clip(_pdf(path))
         if ext in (".txt", ".md"):
-            return path.read_text("utf-8", errors="replace")[:200_000]
+            if _looks_binary(path):
+                return None
+            return _clip(path.read_text("utf-8", errors="replace"))
         # 老格式（doc/ppt/xls/rtf/odt…）：先转 PDF 再抽正文，保证能进全文索引
         if ext in (".doc", ".ppt", ".xls", ".rtf", ".odt", ".odp", ".ods"):
             from .office_convert import ensure_pdf_for_file, pdf_text
@@ -246,7 +273,7 @@ def extract_text(path: Path, ext: str) -> str | None:
             if pdf is not None:
                 txt = pdf_text(pdf)
                 if txt.strip():
-                    return txt
+                    return _clip(txt)
     except Exception:
         return None  # 提取失败不阻断上传
     return None
