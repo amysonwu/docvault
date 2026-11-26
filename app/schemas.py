@@ -79,6 +79,10 @@ class CreateDocIn(BaseModel):
     folder_id: int | None = None
 
 
+class RenameDocIn(BaseModel):
+    name: str                                  # 仅主名，不含扩展名
+
+
 class SaveTextIn(BaseModel):
     content: str
     note: str = "在线编辑"

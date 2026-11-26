@@ -17,7 +17,7 @@ from ..deps import (doc_perm_checker, get_current_user, require_doc_perm,
                     require_space_perm, system_admin_only)
 from ..extract import extract_preview
 from ..models import Document, DocumentVersion, Folder, User, VersionTag
-from ..schemas import CreateDocIn, SaveTextIn
+from ..schemas import CreateDocIn, RenameDocIn, SaveTextIn
 from ..storage import storage
 from ..version_service import commit_version, sanitize_name, version_download_name
 
@@ -366,6 +366,33 @@ def search(
 def get_document(doc_user=Depends(require_doc_perm("read")), db: Session = Depends(get_db)):
     doc, user = doc_user
     return doc_out(db, doc, user)
+
+
+@router.patch("/{document_id}")
+def rename_document(data: RenameDocIn, request: Request = None,
+                    doc_user=Depends(require_doc_perm("write")),
+                    db: Session = Depends(get_db)):
+    """重命名文档：只改主名，扩展名/版本链/存储均不变（写权限可改）"""
+    doc, user = doc_user
+    raw = (data.name or "").strip()
+    # 用户可能连扩展名一起填进来：按已知后缀白名单剥掉最后一段（长的在前，如 .docx 先于 .doc），
+    # 避免存成「名.pdf」而库内后缀仍是 .md。只认白名单，不误伤主名里的点号（如 v1.2 方案）。
+    low = raw.lower()
+    for ext in sorted(_KNOWN_EXTS, key=len, reverse=True):
+        if low.endswith(ext):
+            raw = raw[: -len(ext)].strip()
+            break
+    new_name = sanitize_name(raw)
+    if not new_name or new_name == "未命名":
+        raise HTTPException(400, "文档名不能为空")
+    if new_name == doc.name:
+        return {"ok": True, "name": doc.name, "ext": doc.ext, "unchanged": True}
+    old_name = doc.name
+    doc.name = new_name
+    db.commit()
+    audit.log(db, user.id, "doc_rename", request, "document", doc.id,
+              {"from": old_name, "to": new_name})
+    return {"ok": True, "name": new_name, "ext": doc.ext}
 
 
 @router.get("/{document_id}/versions/{seq}/content")
