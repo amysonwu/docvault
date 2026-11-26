@@ -357,7 +357,7 @@ h4{font-size:13.5px;font-weight:600;color:#334155;letter-spacing:.01em}
         <div class="item sub" @click="switchSpace(s.id)" :class="{active: view==='docs' && navFocus==='space' && spaceId===s.id, 'has-kids': spaceId===s.id && folderRows.length}">
           <i class="seg" v-for="(sg, sgi) in s.segs" :key="'sgs'+sgi"
              :style="{left: sg.left, top: sg.top, width: sg.w + 'px', height: sg.h}"></i>
-          <span class="node-label" @dblclick.stop="renameSpace(s)" :title="(s.owner_id===user.id || s.my_admin || s.is_system_admin) ? '双击可重命名' : s.name"><span class="node-ic"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z"/><path d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12"/><path d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17"/></svg></span><span class="nm">{{ s.name }}</span></span>
+          <span class="node-label" @dblclick.stop="renameSpace(s)" :title="s.name + ((s.owner_id===user.id || s.my_admin || s.is_system_admin) ? '\n双击可重命名' : '')"><span class="node-ic"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z"/><path d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12"/><path d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17"/></svg></span><span class="nm">{{ s.name }}</span></span>
           <span class="node-actions">
             <span class="side-add del" v-if="user && user.role==='admin'" @click.stop="deleteSpace(s)" title="删除空间（仅系统管理员）">
               <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M6 6l12 12M18 6L6 18"/></svg>
@@ -380,7 +380,7 @@ h4{font-size:13.5px;font-weight:600;color:#334155;letter-spacing:.01em}
           <div class="item sub2" v-for="f in folderRows" :key="'fo'+f.id" @click="pickFolder(f.id)"
                :class="{active: view==='docs' && navFocus==='folder' && folderId===f.id, 'no-perm': !f.can_read}"
                :style="{'--d': f.depth}"
-               :title="f.can_read ? '' : '无访问权限：该目录未授权给你'">
+               :title="f.can_read ? f.name : '无访问权限：该目录未授权给你'">
             <i class="seg" v-for="(s, si) in f.segs" :key="'sg'+si"
                :style="{left: s.left, top: s.top, width: s.w + 'px', height: s.h}"></i>
             <span class="node-label" @dblclick.stop="f.can_manage && renameFolder(f)">
