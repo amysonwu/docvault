@@ -54,13 +54,17 @@ tbody tr:last-child td{border-bottom:none}
 .node-label{flex:1 1 auto;min-width:0;display:flex;align-items:center;gap:7px}
 .upd-name{font-size:12.5px;color:#334155;line-height:1.5}
 .upd-time{font-size:11.5px;color:#94a3b8;line-height:1.5;font-variant-numeric:tabular-nums}
-.node-label .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.node-label .nm{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .node-ic{flex:0 0 16px;width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;color:#93c5fd}
 .sidebar .item.active .node-ic{color:#fff}
-/* 节点内联快捷操作：统一右对齐的操作组，各层级图标严格对齐 */
-.node-actions{flex:0 0 auto;display:flex;align-items:center;gap:1px;opacity:0;transition:opacity .12s;
-  pointer-events:none;margin-left:auto}
+/* 节点内联快捷操作：绝对定位浮层，平时不占名称宽度；hover 时带同色底色覆盖在文字上方 */
+.node-actions{position:absolute;right:8px;top:50%;transform:translateY(-50%);
+  display:flex;align-items:center;gap:1px;opacity:0;transition:opacity .12s;
+  pointer-events:none;padding:2px 1px 2px 14px;border-radius:6px;
+  background:linear-gradient(90deg,transparent,#1e293b 14px)}
 .sidebar .item:hover .node-actions{opacity:1;pointer-events:auto}
+.sidebar .item.active .node-actions{background:linear-gradient(90deg,transparent,var(--blue) 14px)}
+.sidebar .item.sub2.active .node-actions{background:linear-gradient(90deg,transparent,#142855 14px)}
 .side-add{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:4px;
   color:#94a3b8;transition:background .12s,color .12s}
 .side-add svg{display:block}
@@ -70,7 +74,7 @@ tbody tr:last-child td{border-bottom:none}
 .sidebar .item.active{background:var(--blue);color:#fff;font-weight:500}
 .sidebar .item.sub2{font-size:13px;color:#a8b4c4;white-space:nowrap;
   padding-left:calc(var(--trunk-x,20px) + 15px + var(--d,0) * 16px)}
-.sidebar .item.sub2 .f-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block}
+.sidebar .item.sub2 .f-name{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block}
 .sidebar .item.sub2.active{background:rgba(37,99,235,.22);color:#bfdbfe;font-weight:500}
 .sidebar .item.sub2.no-perm{color:#5b6779;cursor:not-allowed}
 .sidebar .item.sub2.no-perm:hover{background:transparent;color:#5b6779}
@@ -384,7 +388,7 @@ h4{font-size:13.5px;font-weight:600;color:#334155;letter-spacing:.01em}
             <i class="seg" v-for="(s, si) in f.segs" :key="'sg'+si"
                :style="{left: s.left, top: s.top, width: s.w + 'px', height: s.h}"></i>
             <span class="node-label" @dblclick.stop="f.can_manage && renameFolder(f)">
-              <span class="f-ic"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg></span>{{ f.name }}<span class="f-lock" v-if="f.is_private" title="私有目录：仅受邀成员可见">🔒</span>
+              <span class="f-ic"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg></span><span class="f-name">{{ f.name }}</span><span class="f-lock" v-if="f.is_private" title="私有目录：仅受邀成员可见">🔒</span>
               <span class="f-noperm" v-if="!f.can_read">无权限</span>
             </span>
             <span class="node-actions">
