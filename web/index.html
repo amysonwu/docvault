@@ -400,6 +400,9 @@ h4{font-size:13.5px;font-weight:600;color:#334155;letter-spacing:.01em}
               <span class="side-add" v-if="f.my_content==='write'" @click.stop="quickNewDoc(s, f)" title="加文档：在该目录新建文档">
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M7 3h7l4 4v14H7z"/><path d="M14 3v4h4"/><path d="M10.5 13h5M13 10.5v5"/></svg>
               </span>
+              <span class="side-add del" v-if="user && user.role==='admin'" @click.stop="deleteFolder(f)" title="删除目录（含子目录，文档移入回收站）">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v5M14 11v5"/></svg>
+              </span>
             </span>
           </div>
         </template>
@@ -1473,6 +1476,21 @@ createApp({
         saveNav();
       } catch (e) { say(e.message); }
     }
+    async function deleteFolder(f) {
+      if (!await confirmBox(
+        `删除目录「${f.name}」？\n\n其下的子目录会一并删除，目录内的文档移入回收站，30 天内可恢复（恢复后落在空间根目录）。`)) return;
+      try {
+        const r = await api(`/api/folders/${f.id}`, { method: "DELETE" });
+        say(r.trashed_docs
+          ? `已删除 ${r.folders} 个目录，${r.trashed_docs} 个文档移入回收站`
+          : `已删除 ${r.folders} 个目录`);
+        folders.value = await api(`/api/spaces/${spaceId.value}/folders`);
+        if (!folders.value.some(x => x.id === folderId.value)) {   // 当前选中的目录被删掉了
+          folderId.value = null; navFocus.value = "root";
+        }
+        await loadDocs(); saveNav();
+      } catch (e) { say(e.message); }
+    }
     // ---- 目录级权限（私有目录 + 邀请授权，支持用户组）----
     const fp = ref(null), fpAddUser = ref(null), fpAddPerm = ref("read");
     const fpAddType = ref("user"), fpAddGroup = ref(null);
@@ -2475,7 +2493,7 @@ createApp({
       cur, versions, editOnly, diffOld, diffNew, diffResult, view, auditLogs, stats,
       sharePwd, shareHours, shareUrl, copied, fileInput, commitInput,
       fmtSize, fmtTime, srcLabel, fmtSummary, noteText,
-      loadAll, loadDocs, doSearch, onExtChange, onScopeChange, newSpace, renameSpace, deleteSpace, newFolder, renameFolder, uploadClick, doUpload,
+      loadAll, loadDocs, doSearch, onExtChange, onScopeChange, newSpace, renameSpace, deleteSpace, deleteFolder, newFolder, renameFolder, uploadClick, doUpload,
       quickNewFolder, quickNewDoc,
       fp, fpAddUser, fpAddPerm, fpAddType, fpAddGroup, openFolderPerm, toggleFolderPrivate, moveFolderToRoot, addFolderPerm,
       perm, docPerm, permAddUser, permAddContent, permAddAdmin, permAddHours, permAddType, permAddGroup,

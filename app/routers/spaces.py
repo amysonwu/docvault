@@ -2,6 +2,8 @@
 # Copyright (C) 2026 DocVault Contributors
 # Author: Amyson Wu
 """空间 / 目录 / 成员（三级结构：空间→目录→文档）"""
+import datetime as dt
+
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 
@@ -260,6 +262,58 @@ def update_folder(folder_id: int, data: FolderUpdateIn, db: Session = Depends(ge
     db.commit()
     audit.log(db, user.id, "folder_update", request, "folder", folder_id, changed)
     return {"ok": True, **changed}
+
+
+@folders_router.delete("/{folder_id}")
+def delete_folder(folder_id: int, request: Request = None,
+                  db: Session = Depends(get_db),
+                  user: User = Depends(system_admin_only)):
+    """删除目录：子目录一并删除，目录内文档移入回收站（30 天内可恢复）
+
+    删除属结构操作，与文档删除、空间删除同口径，仅系统管理员可执行。
+    与空间删除的区别：空间要求先清空，这里允许带着内容删，但文档只是进回收站，
+    不会像空间删除那样连版本一起彻底清除。
+    """
+    from .. import audit
+    from ..models import Document, FolderAcl, FolderGroupAcl
+
+    f = db.get(Folder, folder_id)
+    if not f:
+        raise HTTPException(404, "目录不存在")
+
+    # 收集整棵子树（含自身），再统一处理文档与授权
+    all_f = db.query(Folder).filter_by(space_id=f.space_id).all()
+    children: dict = {}
+    for x in all_f:
+        children.setdefault(x.parent_id, []).append(x.id)
+    ids: list[int] = []
+    stack = [folder_id]
+    while stack:
+        cur = stack.pop()
+        ids.append(cur)
+        stack.extend(children.get(cur, []))
+
+    now = dt.datetime.utcnow()
+    docs = db.query(Document).filter(Document.folder_id.in_(ids)).all()
+    trashed = 0
+    for d in docs:
+        if d.status == "active":
+            d.status, d.deleted_at, d.deleted_by = "trashed", now, user.id
+            trashed += 1
+        # 目录马上要被删掉，文档一律解除目录归属，避免外键阻塞；
+        # 从回收站恢复时会落在空间根目录
+        d.folder_id = None
+
+    db.query(FolderAcl).filter(FolderAcl.folder_id.in_(ids)).delete(synchronize_session=False)
+    db.query(FolderGroupAcl).filter(FolderGroupAcl.folder_id.in_(ids)).delete(synchronize_session=False)
+    db.flush()          # 先清关联，再按「子 → 父」顺序删目录，避免自引用外键报错
+    for fid in reversed(ids):
+        db.query(Folder).filter_by(id=fid).delete(synchronize_session=False)
+    name = f.name
+    db.commit()
+    audit.log(db, user.id, "folder_delete", request, "folder", folder_id,
+              {"name": name, "folders": len(ids), "trashed_docs": trashed})
+    return {"ok": True, "name": name, "folders": len(ids), "trashed_docs": trashed}
 
 
 @router.patch("/{space_id}")
